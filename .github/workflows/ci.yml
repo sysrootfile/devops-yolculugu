@@ -29,3 +29,34 @@ jobs:
           test -d dist || { echo "dist/ yok!"; exit 1; }
           test -f dist/index.html || { echo "ana sayfa üretilmemiş!"; exit 1; }
           echo "✅ $(find dist -name 'index.html' | wc -l) sayfa üretildi"
+
+  docker:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v4
+
+      - name: GHCR'a giriş yap
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: İmajı derle ve GHCR'a gönder
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}:latest
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.description=DevOps Yolculuğu — interaktif öğrenme platformu
+

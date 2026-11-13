@@ -1,0 +1,15 @@
+# Docker'a gönderilmemesi gerekenler:
+# - gereksiz büyük kopya (container içinde zaten npm ci ile kurulur)
+# - build çıktısı (container içinde yeniden üretilir)
+# - git ve yerel araç durumu
+node_modules/
+dist/
+.astro/
+.git/
+.github/
+.mimosa/
+.zcode/
+.env
+*.log
+Dockerfile
+.dockerignore
