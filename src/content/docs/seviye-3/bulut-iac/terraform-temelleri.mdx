@@ -1,0 +1,231 @@
+---
+title: 'LAB: Terraform ile Infrastructure as Code'
+description: 'Terraform’un HCL dili, state kavramı, plan/apply döngüsü — bulut kaynaklarını koddan yönetmenin temelleri.'
+level: 3
+module: 'bulut-iac'
+order: 3
+duration: 25
+objectives:
+  - 'Terraform workflow’unu (init → plan → apply) uygulayabilmek'
+  - 'State dosyasının rolünü ve risklerini açıklayabilmek'
+  - 'Basit bir kaynak bloğu yazıp değişikliği yönetebilmek'
+prerequisites:
+  - 'seviye-3/bulut-iac/bulut-temelleri'
+tags: ['terraform', 'iac', 'lab']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Infrastructure as Code: “sunucu kurmak” = “PR açmak”
+
+Konsoldan tıklayarak kurulan altyapının üç problemi vardır: **tekrarlanamaz** (yeni ortam = yeniden tıklama), **izlenebilir değildir** (kim ne değiştirdi?), **kalıcı değildir** (bilgi bir kişinin hafızasında). IaC bunları çözer: altyapı, kod gibi yazılır → review edilir → versiyonlanır → otomatik uygulanır.
+
+**Terraform** bu işin standart aracıdır: HCL diliyle yazarsın, *hangi bulut olursa olsun* (AWS, Azure, GCP, Cloudflare... — provider'lar) aynı workflow'u kullanır.
+
+## Workflow: init → plan → apply
+
+```hcl
+# main.tf — bir statik site bucket'ı (vendor-neutral örnek: AWS)
+terraform {
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+  }
+}
+
+provider "aws" {
+  region = "eu-central-1"
+}
+
+resource "aws_s3_bucket" "site" {
+  bucket = "devops-yolculugu-prod"
+}
+
+resource "aws_s3_bucket_public_access_block" "site" {
+  bucket                  = aws_s3_bucket.site.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+```
+
+```bash
+terraform init    # provider'ları indir (npm install karşılığı)
+terraform plan    # NE DEĞİŞECEK? (dry run — asla atlanmaz)
+terraform apply   # plan onaylandıktan sonra uygula
+```
+
+`plan` çıktısının dili:
+
+```
+  + create   # eklenecek kaynak
+  ~ update   # değiştirilecek (in-place)
+  - destroy  # silinecek — OKUYUP ANLAMADAN onay verme!
+  -/+ replace # sil-yeniden oluştur (downtime riski!)
+```
+
+## State: Terraform'un hafızası
+
+Terraform, "ne kurduğunu" **state dosyasında** (`terraform.tfstate`) tutar. Bu dosya:
+
+- Gerçek kaynaklarla kod arasındaki **köprüdür**
+- **Şifreli ve paylaşımlı** olmalıdır (S3 + DynamoDB lock gibi **remote backend**'lerde tutulur)
+- **Repoya commit EDİLMEZ** — içinde secret'lar olabilir, ve ekip tek state üzerinden çalışmalıdır
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "tf-state-benim"
+    key            = "prod/site.tfstate"
+    region         = "eu-central-1"
+    dynamodb_table = "tf-locks"
+  }
+}
+```
+
+Lock mekanizması kritiktir: iki kişi aynı anda `apply` ederse state bozulur; lock bunu önler.
+
+## Web terminalinde terraform döngüsü
+
+<TerminalSim
+  id="s3-terraform"
+  title="terraform-lab"
+  prompt="$"
+  welcome={[
+    'Bir bucket ekle → plan → apply → sonra kodda değişiklik → plan → apply.',
+    'Dikkat: “-/+ replace” satırlarını görürsen önce oku!',
+  ]}
+  hint="terraform init → plan → apply → sonra bucket adını değiştirip tekrar plan"
+  commands={{
+    'terraform init': {
+      out: [
+        'Initializing the backend...',
+        'Terraform has been successfully initialized!',
+      ],
+    },
+    'terraform plan': {
+      out: [
+        'Terraform will perform the following actions:',
+        '  + aws_s3_bucket.site',
+        'Plan: 1 to add, 0 to change, 0 to destroy.',
+        '~plan = değişiklik raporu; “apply etmeden önce bunu oku” kuralı.',
+      ],
+    },
+    'terraform apply': {
+      out: [
+        'Do you want to perform these actions? yes',
+        'aws_s3_bucket.site: Creating...',
+        'Apply complete! Resources: 1 added.',
+        '+kaynak gerçek dünyada kuruldu; state güncellendi.',
+      ],
+    },
+    'terraform plan (değişiklik sonrası)': {
+      out: [
+        '  ~ aws_s3_bucket.site (tags güncellenecek)',
+        'Plan: 0 to add, 1 to change, 0 to destroy.',
+      ],
+    },
+    'terraform destroy': {
+      out: [
+        'Plan: 0 to add, 0 to change, 1 to destroy.',
+        '!destroy TÜM kaynakları siler — production’da koruma (prevent_destroy) düşün!',
+      ],
+    },
+  }}
+/>
+
+## Modüller: yeniden kullanılabilir altyapı
+
+Terraform kodu da fonksiyonlara bölünür — **module**:
+
+```hcl
+module "static_site" {
+  source      = "./modules/static-site"
+  domain      = "site.example.com"
+  environment = "prod"
+}
+```
+
+Aynı modülü dev/staging/prod için farklı değerlerle çağırırsın — IaC'nin DRY'ı.
+
+## DevOps bağlantısı: plan, CI'da çalışır
+
+İyi pratik: **PR'da `terraform plan` çıktısı otomatik yorum olarak düşer** (CI). Review eden kişi, altyapının ne değişeceğini kodla birlikte görür. `apply` ise yalnızca merge sonrası, korumalı pipeline'dan geçer — altyapı değişikliği de bir deployment disiplinine tabidir.
+
+<LabBox
+  id="s3-terraform-lab"
+  title="İlk terraform döngün"
+  verify={['terraform --version', 'terraform fmt -check || terraform fmt']}
+>
+  1. `terraform` CLI'ını kur (hashicorp.com/install).
+  2. Boş klasörde yukarıdaki `main.tf`'yi yaz (provider'ı lokal çalıştırılabilir bir şey yapabilirsin — ör. `local_file` provider'ı ücretsiz ve anında çalışır!).
+  3. `terraform init && terraform plan` — çıktıyı **okuyarak** geç.
+  4. `terraform apply -auto-approve` ile uygula; oluşan dosyayı kontrol et.
+  5. Koddaki bir etiketi değiştir → `plan` (update görmelisin) → `apply`.
+  6. `terraform destroy` ile temizle.
+  7. Bonus: `terraform fmt` — kod formatını otomatikleştirir (CI'da `-check` ile doğrulanır).
+</LabBox>
+
+<Callout type="tip" title="Lokal provider ile risk almadan öğren">
+  Gerçek bulut hesabı olmadan Terraform öğrenmek için `local_file` (dosya yaratır),
+  `null` (hiçbir şey yapmayan) provider’ları idealdir: plan/apply/state döngüsünün
+  tamamını risk almadan yaşarsın. Bulut hesabına geçiş sadece `provider` bloğu
+  değiştirmektir.
+</Callout>
+
+<Quiz
+  id="s3-terraform"
+  questions={[
+    {
+      q: 'Terraform state dosyası neden remote backend’de tutulmalı?',
+      options: [
+        'Dosya büyük olduğu için',
+        'Ekip ortak çalışır + lock sağlanır + yerel kayıpta state kaybolmaz',
+        'CI daha hızlı çalışır',
+        'Şart değil',
+      ],
+      answer: 1,
+      explain:
+        'State tek doğruluk kaynağıdır: paylaşımlı depolama + lock, çift apply’ı ve kaybı önler.',
+    },
+    {
+      q: 'Plan çıktısında “-/+ replace” neyi işaret eder?',
+      options: [
+        'Basit etiket güncellemesi',
+        'Kaynağın silinip yeniden oluşturulacağı — downtime riski var, önce okunmalı',
+        'Hiçbir şey',
+        'Yeni modül',
+      ],
+      answer: 1,
+      explain:
+        'Bazı alanlar değişince kaynak recreate edilir; veritabanı gibi kaynaklarda veri kaybı riski taşır.',
+    },
+    {
+      q: 'terraform.tfstate dosyasının repoya commit edilmemesinin sebebi?',
+      options: [
+        'Repo şişer',
+        'Secret’lar içerebilir + eş zamanlı çalışmayı bozar',
+        'Git desteklemez',
+        'Lisans kısıtı',
+      ],
+      answer: 1,
+      explain:
+        'State düz JSON’dur ve kaynak secret’larını içerir; ayrıca ekip çoğaltırsa köprü bozulur — remote backend standardıdır.',
+    },
+    {
+      q: 'PR’da otomatik `terraform plan` çalıştırmanın amacı?',
+      options: [
+        'Build hızını artırmak',
+        'Review eden kişinin altyapı değişikliğini kodla birlikte görmesi',
+        'State’i temizlemek',
+        'Provider güncellemek',
+      ],
+      answer: 1,
+      explain:
+        'Altyapı da koddur: değişiklik etkisi (add/change/destroy) PR’da şeffaf olmalı.',
+    },
+  ]}
+/>

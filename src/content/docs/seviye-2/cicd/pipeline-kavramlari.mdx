@@ -1,0 +1,134 @@
+---
+title: 'Pipeline Kavramları: CI, CD ve CD'
+description: 'Build-test-deploy zincirinin anatomisi; CI, Continuous Delivery ve Continuous Deployment arasındaki fark; darboğazları bulmak.'
+level: 2
+module: 'cicd'
+order: 1
+duration: 18
+objectives:
+  - 'Bir pipeline’ın temel aşamalarını açıklayabilmek'
+  - 'CI / Continuous Delivery / Continuous Deployment farklarını ayırt edebilmek'
+  - 'Küçük parça prensibinin pipeline performansına etkisini kavramak'
+prerequisites:
+  - 'seviye-1/git/branch-merge-rebase'
+tags: ['ci/cd', 'temel kavramlar']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import Mermaid from '@components/Mermaid.astro';
+
+## Pipeline: kalite kapılarından geçen otomatik yol
+
+**Pipeline** (boru hattı), bir commit'in production'a yolculuğunun otomatikleştirilmiş adımlarıdır:
+
+<Mermaid
+  chart={`flowchart LR
+    C["git push"] --> B["Build<br/>derle + bağımlılık kur"]
+    B --> T["Test<br/>unit + integration"]
+    T --> L["Analiz<br/>lint + güvenlik taraması"]
+    L --> A["Artifact<br/>paketi sakla"]
+    A --> D["Deploy<br/>staging → prod"]
+    T -->|hata| X["❌ Pipeline durur<br/>ekip bilgilendirilir"]`}
+  caption="Her aşama bir kalite kapısıdır: biri kırmızıysa trafik bir sonraki adıma geçmez."
+/>
+
+Pipeline'ın gücü, kapıların **otomatik ve pazarlıksız** olmasında: “testler kırmızı ama acil lazım” cümlesi geçersizdir; ya düzeltilir ya kapı açılmaz.
+
+## CI: Continuous Integration
+
+Her geliştirici, çalışmasını **günde en az bir kez** ana dala entegre eder; her push, otomatik build + test tetikler.
+
+- **Problem (öncesi):** aylar süren dallanma → “integration hell”: birleştirme günleri, yüzlerce çakışma
+- **Çözüm:** küçük parçalar, sık entegrasyon, anında geri bildirim
+
+CI'ın verdiği söz: *“main dalındaki her commit, deploy edilebilir durumdadır.”*
+
+## CD'nin iki anlamı
+
+Kısaltma aynı, pratik iki seviye:
+
+| | Continuous **Delivery** | Continuous **Deployment** |
+| --- | --- | --- |
+| Testler geçince ne olur? | Staging'e otomatik, prod'a **elle onay** | Prod dahil **her şey otomatik** |
+| İnsan dokunuşu | “Deploy” butonuna basılır | Yok — push = prod |
+| Tipik yer | Regüle sektörler, yavaş güven inşası | Olgun ekipler, feature flag desteğiyle |
+
+Continuous Deployment'ın psikolojik eşiği “korku”dur; aşmak için iki şart gerekir: **güvenilir test suite** ve **hızlı geri alma** (rollback) yeteneği. Seviye 5'te canary/blue-green ile bu korkuyu sistematik yeneceğiz.
+
+## Küçük parça prensibi
+
+Pipeline'ın hızının sırrı, kodun değil **değişikliklerin** boyutundadır:
+
+- Küçük commit → test küçük ve spesifik → hata bulunması kolay → fix'i küçük
+- Büyük commit → her şey test edilir, her şey risklidir → hata araştırması saatler sürer
+
+DORA metriklerinden **lead time** (commit → prod) tam olarak bu zincirin süresini ölçer. Elit ekipler: bir günden az.
+
+## Darboğazları bulmak
+
+Lean ilkesi (Seviye 0): sistemin hızı, **en yavaş adımın** hızıdır. Pipeline'ında darboğazı bulmak için adım sürelerini izle:
+
+- Bağımlılık kurulumu %70 süreyi yiyorsa → cache (bir sonraki dersler)
+- E2E testleri saatler sürüyorsa → paralelleştir, kritik olmayanları geceden koştur
+- Deploy elle adımlarla doluysa → otomatikleştir, scriptleştir
+
+<Callout type="info" title="Bu reponun pipeline'ı">
+  Bu sitenin kendi CI'ı (`.github/workflows/ci.yml`) tam olarak bu deseni izler:
+  kurulum → derleme → test. İki ders sonra onu beraber yazacağız ve her push'ta
+  çalışmasını izleyeceğiz.
+</Callout>
+
+<Quiz
+  id="s2-pipeline-kavramlari"
+  questions={[
+    {
+      q: 'Continuous Delivery ile Continuous Deployment arasındaki fark nedir?',
+      options: [
+        'Delivery test içermez',
+        'Delivery’de prod için insan onayı vardır; Deployment’ta her şey otomatiktir',
+        'Deployment yalnızca staging’e çıkarır',
+        'Fark yoktur',
+      ],
+      answer: 1,
+      explain:
+        'CD’nin iki anlamı: Delivery’de son kapı (prod) elle; Deployment’ta tam otomatik.',
+    },
+    {
+      q: 'CI’ın “main dalındaki her commit deploy edilebilir” sözünü tutması neye bağlıdır?',
+      options: [
+        'Ekip büyüklüğüne',
+        'Otomatik build + test kapılarının her push’ta çalışmasına',
+        'Sunucu sayısına',
+        'Commit mesajlarına',
+      ],
+      answer: 1,
+      explain:
+        'CI = otomatik doğrulama. Kapılar olmadan “deploy edilebilir main” bir umuttan ibarettir.',
+    },
+    {
+      q: 'Pipeline’ın toplam süresini asıl belirleyen nedir?',
+      options: [
+        'En hızlı adım',
+        'En yavaş adım (darboğaz)',
+        'Toplam adım sayısı',
+        'Runner’ın işletim sistemi',
+      ],
+      answer: 1,
+      explain:
+        'Lean darboğaz teorisi: zincir sadece en yavaş halkası kadar hızlıdır; iyileştirme oradan başlar.',
+    },
+    {
+      q: 'Küçük ve sık commit’lerin pipeline’a katkısı nedir?',
+      options: [
+        'Hata aramasını daraltır, review’ı kolaylaştırır',
+        'Pipeline’ı atlamayı mümkün kılar',
+        'Test yazmayı gereksizleştirir',
+        'Cache’i devre dışı bırakır',
+      ],
+      answer: 0,
+      explain:
+        'Küçük değişiklik = küçük risk. Hata çıkarsa neredeyse belli; geri alma da küçüktür.',
+    },
+  ]}
+/>

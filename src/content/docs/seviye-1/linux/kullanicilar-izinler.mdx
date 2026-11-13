@@ -1,0 +1,152 @@
+---
+title: 'Kullanıcılar, İzinler ve sudo'
+description: 'chmod/chown mantığı, rwx bitleri, sudo kullanımı ve “en az yetki” ilkesi — güvenliğin temel taşı.'
+level: 1
+module: 'linux'
+order: 3
+duration: 20
+objectives:
+  - 'rwx izin bitlerini okuyup yorumlayabilmek'
+  - 'chmod ve chown ile izin değiştirebilmek'
+  - 'sudo mantığını ve en az yetki (least privilege) ilkesini kavramak'
+prerequisites:
+  - 'seviye-1/linux/temel-komutlar'
+tags: ['linux', 'güvenlik', 'izinler']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Her şeyin bir sahibi var
+
+Linux çok kullanıcılı bir sistemdir: her dosyanın bir **sahibi (owner)**, bir **grubu** ve **izin bitleri** vardır. `ls -l` çıktısındaki o gizemli dizgiyi çözelim:
+
+```
+-rwxr-xr-- 1 deploy webteam 4096 Nov 12 deploy.sh
+│└┬┘└┬┘└┬┘   │
+│ │  │  │    └─ diğerleri (others)
+│ │  │  └────── grup (webteam)
+│ │  └───────── sahip (deploy)
+│ └──────────── grup izinleri: r-x
+└────────────── sahip izinleri: rwx ; ilk harf: dosya türü (- dosya, d dizin)
+```
+
+Yani: **deploy** kullanıcısı okur-yazar-çalıştırır; **webteam** grubu okur-çalıştırır; diğerleri yalnızca okur.
+
+## Sayısal mod: 755, 644 ne demek?
+
+Her izin bir bit: `r=4, w=2, x=1`. Üç haneli sayılar üç grubun toplamıdır:
+
+| Mod | Sahip | Grup | Diğer | Tipik kullanım |
+| --- | --- | --- | --- | --- |
+| `755` | rwx (7) | r-x (5) | r-x (5) | script'ler, dizinler |
+| `644` | rw- (6) | r-- (4) | r-- (4) | yapılandırma dosyaları |
+| `600` | rw- (6) | --- | --- | SSH özel anahtarları (gizli!) |
+| `777` | rwx | rwx | rwx | ❌ neredeyse her zaman hatadır |
+
+```bash
+chmod 755 deploy.sh      # sembolik değil, sayısal mod
+chmod +x deploy.sh       # sadece çalıştırma izni ekle
+chown deploy:webteam deploy.sh   # sahip ve grup değiştir
+sudo chown -R www-data:www-data /var/www/app   # rekürsif
+```
+
+<Callout type="warn" title="SSH anahtarı efsanesi">
+  `chmod 600 ~/.ssh/id_ed25519` yapmadıysan SSH, özel anahtarını “çok açık izinli” diye
+  reddeder. Bu, öğrencilerin en sık karşılaştığı hatadır — ve güvenlik felsefesinin ta
+  kendisidir: gizli dosya, sadece sahibine açıktır.
+</Callout>
+
+## Web terminalinde izinleri dene
+
+<TerminalSim
+  id="s1-linux-izinler"
+  title="izin-lab"
+  prompt="ogrenci@devops:~$"
+  welcome={[
+    'İzin laboratuvarına hoş geldin 🔐',
+    'deploy.sh scripti izinsiz! Önce ls -l ile bak, sonra izin ver.',
+  ]}
+  hint="ls -l → chmod +x deploy.sh → ./deploy.sh → chmod 600 secret.txt → cat secret.txt"
+  commands={{
+    'ls -l': {
+      out: [
+        '-rw-r--r-- 1 ogrenci ogrenci 120 Nov 12 deploy.sh',
+        '-rw------- 1 ogrenci ogrenci  32 Nov 12 secret.txt',
+      ],
+    },
+    'chmod +x deploy.sh': { out: ['(deploy.sh artık çalıştırılabilir — ls -l ile gör)'] },
+    'ls -l': {
+      out: [
+        '-rwxr-xr-x 1 ogrenci ogrenci 120 Nov 12 deploy.sh',
+        '-rw------- 1 ogrenci ogrenci  32 Nov 12 secret.txt',
+      ],
+    },
+    './deploy.sh': { out: ['[OK] deploy simülasyonu tamamlandı ✅'] },
+    'chmod 600 secret.txt': { out: ['(secret.txt zaten 600 idi)'] },
+    'cat secret.txt': { out: ['DB_PASSWORD=s3cr3t-w0rd (bu dosyayı kimseyle paylaşma!)'] },
+  }}
+/>
+
+## sudo: güçlü ama ölçülü
+
+`sudo` (superuser do) bir komutu **başka bir kullanıcının** (varsayılan root) kimliğiyle çalıştırır:
+
+```bash
+sudo apt update          # root yetkisiyle paket listesi güncelle
+sudo systemctl restart nginx   # servisi yeniden başlat
+sudo -i                  # root kabuğuna geç (oturum boyunca)
+```
+
+Neden her zaman root ile çalışılmaz? Çünkü **en az yetki ilkesi (least privilege)**: bir süreç/kullanıcı, işini yapacak *en düşük* yetkiye sahip olmalı. Root olarak çalışırken yazım hatası bile sistem çözer; düşük yetkili kullanıcı hatası yalnızca kendi dosyalarına zarar verir.
+
+<Callout type="info" title="Kim ne yapabilir?">
+  Kimin sudo kullanabileceği `/etc/sudoers` ve `/etc/sudoers.d/` altında tanımlanır.
+  Bu dosyayı düzenlemek için daima `sudo visudo` kullanılır — yazım hatası yaparsan
+  kaydetmene izin vermez. (Kilitli dışarı kalma = lockout, klasik olaydır.)
+</Callout>
+
+## Neden bu kadar önemli? (DevOps bağlantısı)
+
+- **Container'lar** izin modelini kullanır: `USER` direktifi ile root olmayan kullanıcıyla çalıştırmak bir en iyi pratiktir (Seviye 3).
+- **SSH anahtarları**, **TLS sertifikaları** izinlerin tam olmasıyla çalışır (600/644).
+- **CI runner'lar** “secret'ları kim görebilir?” sorusunu izin mantığıyla cevaplar (Seviye 2).
+- Incident'lerin klasik kaynağı: “yanlış klasörde 777 verilmişti”.
+
+<Quiz
+  id="s1-linux-izinler"
+  questions={[
+    {
+      q: '`-rwxr-x---` izninde grup ne yapabilir?',
+      options: ['Okuyabilir, yazabilir, çalıştırabilir', 'Okuyabilir ve çalıştırabilir', 'Yalnızca okuyabilir', 'Hiçbir şey'],
+      answer: 1,
+      explain: 'Sahip: rwx (7). Grup: r-x (5) → oku+çalıştır. Diğerleri: --- (0).',
+    },
+    {
+      q: 'SSH özel anahtarı için doğru izin hangisidir?',
+      options: ['777', '755', '644', '600'],
+      answer: 3,
+      explain:
+        '600 = yalnızca sahibi okuyup yazar. SSH, daha açık izinli anahtarı güvenlik gerekçesiyle reddeder.',
+    },
+    {
+      q: 'En az yetki (least privilege) ilkesi neden savunulur?',
+      options: [
+        'Komutlar daha hızlı çalışır',
+        'Hata veya ihlal durumunda hasarın etki alanını daraltmak için',
+        'Disk tasarrufu sağlar',
+        'Loglar daha kısa olur',
+      ],
+      answer: 1,
+      explain:
+        'Yetki arttıkça bir yazım hatası ya da sızma daha büyük zarar verir; minimum yetki = minimum blast radius.',
+    },
+    {
+      q: '/etc/sudoers dosyasını düzenlemek için doğru yöntem?',
+      options: ['nano ile direkt açmak', 'echo ile ekleme yapmak', 'sudo visudo', 'chmod 777 verip düzenlemek'],
+      answer: 2,
+      explain: 'visudo, kaydetmeden sözdizimi kontrolü yapar; bozuk sudoers dosyası sistemi kilitler.',
+    },
+  ]}
+/>

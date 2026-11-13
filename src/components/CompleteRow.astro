@@ -1,0 +1,41 @@
+---
+// Ders sonu "tamamlandı" satırı — localStorage + sidebar işaretlerini senkron tutar.
+interface Props {
+  lessonId: string;
+}
+
+const { lessonId } = Astro.props;
+---
+
+<div class="complete-row" data-lesson-complete={lessonId}>
+  <div class="cr-text">
+    <span class="cr-main">Bu dersi bitirdin mi?</span>
+    <span class="cr-sub">İşaretlediğinde dashboard’daki ilerlemen güncellenir.</span>
+  </div>
+  <button class="complete-btn" type="button">✓ Tamamlandı olarak işaretle</button>
+</div>
+
+<script define:vars={{ lessonId }}>
+  const key = 'dy:done:' + lessonId;
+  const row = document.querySelector('[data-lesson-complete="' + lessonId + '"]');
+  const btn = row.querySelector('.complete-btn');
+  const sub = row.querySelector('.cr-sub');
+
+  function sync() {
+    const done = localStorage.getItem(key) === '1';
+    btn.classList.toggle('done', done);
+    btn.textContent = done ? '✓ Tamamlandı' : '✓ Tamamlandı olarak işaretle';
+    sub.textContent = done
+      ? 'Harika! Dashboard’daki ilerlemen güncellendi.'
+      : 'İşaretlediğinde dashboard’daki ilerlemen güncellenir.';
+    const link = document.querySelector('a[data-lesson-id="' + lessonId + '"]');
+    if (link) link.setAttribute('data-done', done ? 'true' : 'false');
+  }
+
+  btn.addEventListener('click', () => {
+    const done = localStorage.getItem(key) === '1';
+    localStorage.setItem(key, done ? '0' : '1');
+    sync();
+  });
+  sync();
+</script>

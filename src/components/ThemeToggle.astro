@@ -1,0 +1,32 @@
+---
+// Tema değiştirme düğmesi — html[data-theme] üzerinde çalışır, 'dy:themechange' olayı yayınlar.
+---
+
+<button class="theme-toggle" type="button" aria-label="Açık/koyu tema değiştir" title="Tema değiştir">
+  <span class="tt-icon">🌙</span>
+</button>
+
+<script>
+  function updateIcon(btn: Element) {
+    const icon = btn.querySelector('.tt-icon');
+    if (!icon) return;
+    const dark = document.documentElement.dataset.theme === 'dark';
+    icon.textContent = dark ? '☀️' : '🌙';
+  }
+
+  function init() {
+    document.querySelectorAll('.theme-toggle').forEach((btn) => {
+      updateIcon(btn);
+      btn.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        localStorage.setItem('dy:theme', next);
+        document.querySelectorAll('.theme-toggle').forEach(updateIcon);
+        document.dispatchEvent(new CustomEvent('dy:themechange', { detail: { theme: next } }));
+      });
+    });
+  }
+
+  init();
+  document.addEventListener('dy:themechange:init', init);
+</script>

@@ -1,0 +1,45 @@
+---
+import { buildNavTree, getAllDocs } from '@lib/content';
+
+const docs = await getAllDocs();
+const tree = buildNavTree(docs);
+const currentPath = Astro.url.pathname.replace(/\/$/, '');
+---
+
+<nav class="sidebar" aria-label="Müfredat">
+  {
+    tree.map((level) => (
+      <div class="level-group">
+        <div class="level-head">
+          <span class="level-dot" style={`background:${level.meta.color}`} />
+          <span style={`color:${level.meta.color}`}>
+            {level.meta.emoji} {level.meta.name}
+          </span>
+        </div>
+        {level.modules.map((mod) => (
+          <div>
+            <div class="module-name">{mod.meta.name}</div>
+            {mod.lessons.map((lesson) => (
+              <a
+                class:list={['lesson-link', { active: currentPath === lesson.url }]}
+                href={lesson.url}
+                data-lesson-id={lesson.id}
+              >
+                <span class="done-mark">✓</span>
+                <span>{lesson.title}</span>
+              </a>
+            ))}
+          </div>
+        ))}
+      </div>
+    ))
+  }
+</nav>
+
+<script>
+  // Tamamlanan dersleri sidebar'da işaretle
+  document.querySelectorAll<HTMLAnchorElement>('a[data-lesson-id]').forEach((a) => {
+    const id = a.getAttribute('data-lesson-id');
+    if (id && localStorage.getItem('dy:done:' + id) === '1') a.setAttribute('data-done', 'true');
+  });
+</script>

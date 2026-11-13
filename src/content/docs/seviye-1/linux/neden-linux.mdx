@@ -1,0 +1,144 @@
+---
+title: 'Neden Linux? Dağıtımlar ve Dosya Sistemi'
+description: 'DevOps dünyasının ana dili Linux; dağıtım farkları, FHS (dosya sistemi hiyerarşisi) ve sunucu mantalitesi.'
+level: 1
+module: 'linux'
+order: 1
+duration: 15
+objectives:
+  - 'Sunucu dünyasında Linux’un neden standart olduğunu açıklamak'
+  - 'Yaygın dağıtımları (Ubuntu, Debian, RHEL, Alpine) arasındaki farkları ayırt etmek'
+  - 'Linux dosya sistemi hiyerarşisinin mantığını okuyabilmek'
+prerequisites:
+  - 'seviye-0/devops-nedir'
+tags: ['linux', 'temel']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import Flashcards from '@components/Flashcards.astro';
+
+## Sunucuların ana dili
+
+Süperbilgisayarlardan bulut’a: **dünyadaki web sunucularının büyük çoğunluğu Linux çalıştırır.** Docker imajları Linux çekirdeği üstünde koşar, Kubernetes kümeleri Linux node’lardan oluşur, çoğu CI runner bile Linux’tur. DevOps öğreneceksen Linux **tercih değil, ön koşul**.
+
+Peki neden? Üç neden:
+
+1. **Açık kaynak + özelleştirilebilir:** çekirdekten kullanıcı alanına kadar her şeyi görüp değiştirebilirsin.
+2. **Uzaktan yönetim tasarımıyla doğdu:** grafik arayüz olmadan, SSH üzerinden tam kontrol.
+3. **Ekosistem:** 30 yıllık araç zinciri (grep, sed, ssh, systemd...) hepsi aynı felsefeye konuşur.
+
+## Dağıtımlar: aynı çekirdek, farklı paketler
+
+“Linux” teknik olarak yalnızca **çekirdektir** (kernel). Çekirdek + paket yöneticisi + araçlar = **dağıtım (distro)**. DevOps için bilmen gerekenler:
+
+| Dağıtım | Paket yöneticisi | Nerede karşına çıkar? |
+| --- | --- | --- |
+| **Ubuntu** | `apt` | En yaygın bulut imajı, CI runner’lar |
+| **Debian** | `apt` | Ubuntu’nun atası; stabil sunucular |
+| **RHEL / Rocky / Alma** | `dnf` / `yum` | Kurumsal ortamlar, bankalar |
+| **Alpine** | `apk` | Minimal container imajları (`FROM alpine`) |
+| **Arch/Fedora** | `pacman` / `dnf` | Masaüstü geliştirme ortamları |
+
+Paket yöneticisi mantığı hepsinde aynıdır: `paketleri kur/güncelle/kaldır` — sadece sözdizimi değişir.
+
+```bash
+# Ubuntu/Debian ailesi
+sudo apt update && sudo apt install nginx
+
+# RHEL ailesi
+sudo dnf install nginx
+
+# Alpine (container'ların favorisi)
+apk add nginx
+```
+
+## Dosya sistemi hiyerarşisi (FHS)
+
+Linux’ta `C:\Program Files` yoktur; her şey tek bir ağaç kökünden (`/`) sarkar. DevOps’un sık kullandığı dizinler:
+
+| Dizin | Ne bulunur? | Neden önemli? |
+| --- | --- | --- |
+| `/etc` | Yapılandırma dosyaları | nginx conf, SSH ayarları, cron... |
+| `/var/log` | Loglar | `journalctl` ve klasik log dosyaları |
+| `/home` | Kullanıcı dosyaları | senin çalışma alanın |
+| `/root` | root kullanıcısının evi | dikkatli ol |
+| `/tmp` | Geçici dosyalar | reboot'ta silinir |
+| `/usr/bin`, `/usr/local/bin` | Yürütülebilir programlar | script'lerini genelde `usr/local/bin`'e koyarsın |
+| `/opt` | Üçüncü parti yazılımlar | self-contained uygulamalar |
+
+<Callout type="tip" title="Pratik kural">
+  Yapılandırma değiştirdiğinde `/etc`'ye bak; bir şey çalışmıyorsa `/var/log`'a bak;
+  bir binary arıyorsan `which <komut>` ile nerede olduğunu sor.
+</Callout>
+
+## “Her şey bir dosyadır”
+
+Linux felsefesinin kalbi: süreç bilgisi, disk, ağ ayarı — hepsi dosya gibi görünür ve okunur/yazılır:
+
+- `/proc/1234/status` → 1234 numaralı sürecin durumu
+- `/sys/class/net/eth0/` → ağ arayüzü ayarları
+- `/dev/null` → “içine yazdığın her şey kaybolur” özel dosya (çıktı bastırmanın klasik yolu: `> /dev/null`)
+
+Bu felsefe, araçların birleşmesini (pipes — bir sonraki derste!) mümkün kılar.
+
+## Kendi Linux’unu kurmak
+
+Bu reponun lab'ları için üç yol:
+
+1. **WSL2 (Windows):** `wsl --install` — Windows içinde gerçek Ubuntu. Windows kullanıcısıysan bu en pratik yol.
+2. **Sanal makine:** VirtualBox/UTM + Ubuntu Server ISO — “kırmadan bozma” özgürlüğü.
+3. **Bulut:** AWS/Azure/GCP ücretsiz katmanında mini bir VM — Seviye 3’te zaten bulutla çalışacaksın.
+
+<Callout type="warn" title="Güvenlik notu">
+  Kuracağın ortamda `sudo` gücüne sahip olacaksın. `rm -rf` gibi komutları hedefini iki
+  kez kontrol etmeden çalıştırma — özellikle `sudo` ile. Seviye 4’te bu refleksin neden
+  güvenlik kültürünün parçası olduğunu tekrar konuşacağız.
+</Callout>
+
+<Flashcards
+  id="s1-linux-neden"
+  cards={[
+    { front: 'Kernel (çekirdek)', back: 'Donanım ile yazılım arasındaki çekirdek katman. “Linux” kelimesi teknik olarak yalnızca buna işaret eder.' },
+    { front: 'Distro (dağıtım)', back: 'Kernel + paket yöneticisi + araçlar paketi: Ubuntu, Debian, RHEL, Alpine...' },
+    { front: 'FHS', back: 'Filesystem Hierarchy Standard: /etc yapılandırma, /var/log loglar, /home kullanıcı dosyaları...' },
+    { front: '/dev/null', back: 'Yazılan her şeyi yok eden özel dosya. Çıktı bastırmak için: komut > /dev/null' },
+    { front: 'Alpine', back: 'Minimal Linux dağıtımı; küçük boyutu yüzünden container imajlarının favorisi. Paket yöneticisi: apk' },
+  ]}
+/>
+
+<Quiz
+  id="s1-linux-neden"
+  questions={[
+    {
+      q: '“Linux” teknik olarak tam olarak neyi ifade eder?',
+      options: ['Bir dağıtımı', 'Çekirdeği (kernel)', 'Bir masaüstü ortamını', 'Bir paket yöneticisini'],
+      answer: 1,
+      explain:
+        'Linux çekirdektir; Ubuntu gibi dağıtımlar çekirdeği paket yöneticisi ve araçlarla birleştirir.',
+    },
+    {
+      q: 'Yapılandırma dosyalarını hangi dizinde ararsın?',
+      options: ['/bin', '/etc', '/tmp', '/home'],
+      answer: 1,
+      explain: 'FHS’e göre /etc sistem ve uygulama yapılandırmalarının standart yeridir.',
+    },
+    {
+      q: 'Container imajlarında minimal boyut nedeniyle en sık hangi dağıtım taban kullanılır?',
+      options: ['Ubuntu', 'RHEL', 'Alpine', 'Windows Server'],
+      answer: 2,
+      explain: 'Alpine ~5MB taban imajıyla Docker dünyasının klasiğidir; paket yöneticisi apk’dir.',
+    },
+    {
+      q: '`komut > /dev/null` ne yapar?',
+      options: [
+        'Komutu çalıştırıp çıktıyı yok eder',
+        'Komutu siler',
+        'Komutu root olarak çalıştırır',
+        'Komutun logunu /var/log’a yazar',
+      ],
+      answer: 0,
+      explain: '/dev/null’a yönlendirilen çıktı yok olur; komut normal çalışır, sadece çıktısı gösterilmez.',
+    },
+  ]}
+/>

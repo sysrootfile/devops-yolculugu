@@ -1,0 +1,91 @@
+---
+import Base from './Base.astro';
+import Sidebar from '@components/Sidebar.astro';
+import CompleteRow from '@components/CompleteRow.astro';
+import { getAllDocs, getNeighbors, sortLessons, toVM, type Doc } from '@lib/content';
+import { levelById, moduleById } from '@consts';
+
+interface Props {
+  entry: Doc;
+}
+
+const { entry } = Astro.props;
+const vm = toVM(entry);
+const docs = await getAllDocs();
+const { prev, next } = getNeighbors(docs, entry.id);
+const level = levelById(entry.data.level);
+const moduleMeta = moduleById(entry.data.module);
+const totalLessons = sortLessons(docs).length;
+const lessonIndex = sortLessons(docs).findIndex((d) => d.id === entry.id) + 1;
+---
+
+<Base title={vm.title} description={vm.description}>
+  <div class="shell">
+    <Sidebar />
+    <main class="content">
+      <article>
+        <header class="lesson-header">
+          <div class="breadcrumbs">
+            <a href="/">🏠 Ana Sayfa</a>
+            <span aria-hidden="true">›</span>
+            <a href={`/#seviye-${vm.level}`}>{level?.name}</a>
+            <span aria-hidden="true">›</span>
+            <span>{moduleMeta?.name}</span>
+          </div>
+          <span class="level-badge" style={`background:${level?.color}`}>
+            {level?.emoji} {level?.name}
+          </span>
+          <h1>{vm.title}</h1>
+          <p class="lesson-desc">{vm.description}</p>
+          <div class="lesson-meta">
+            <span>⏱ ~{vm.duration} dk</span>
+            <span>📖 Ders {lessonIndex}/{totalLessons}</span>
+            {vm.tags.length > 0 && <span>🏷 {vm.tags.join(', ')}</span>}
+          </div>
+        </header>
+
+        {
+          vm.objectives.length > 0 && (
+            <div class="objectives">
+              <h2>🎯 Bu derste</h2>
+              <ul>
+                {vm.objectives.map((o) => (
+                  <li>{o}</li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+
+        <div class="prose">
+          <slot />
+        </div>
+
+        <CompleteRow lessonId={vm.id} />
+
+        <nav class="pager" aria-label="Ders gezinmesi">
+          {
+            prev ? (
+              <a href={prev.url} class="prev">
+                <span class="pg-label">← Önceki ders</span>
+                <span class="pg-title">{prev.title}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+          {
+            next ? (
+              <a href={next.url} class="next">
+                <span class="pg-label">Sonraki ders →</span>
+                <span class="pg-title">{next.title}</span>
+              </a>
+            ) : (
+              <span />
+            )
+          }
+        </nav>
+      </article>
+    </main>
+  </div>
+</Base>

@@ -1,0 +1,188 @@
+---
+title: 'curl ile HTTP Hata Ayıklama'
+description: 'curl’u bir tanışma aracından gerçek bir diagnoz aletine dönüştür: başlıklar, cookie’ler, redirect takibi ve “site neden açılmıyor” akışı.'
+level: 1
+module: 'ag'
+order: 4
+duration: 18
+objectives:
+  - 'curl ile istek gönderip yanıtları (başlık + gövde) okuyabilmek'
+  - 'Yönlendirme (redirect) ve önbellek davranışlarını takip edebilmek'
+  - '“Site erişilemiyor” problemini adım adım daraltabilmek'
+prerequisites:
+  - 'seviye-1/ag/http-ve-tls'
+tags: ['curl', 'http', 'hata ayıklama']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## curl: DevOps'un İsviçre çakısı
+
+`curl` terminalden HTTP istekleri atar. Amaç sadece “indirmek” değil — **görmediğin şeyi görmek**: tarayıcı seni yönlendirdi, önbellekten mi verdi, hangi durum kodu geldi? curl ham gerçeği gösterir.
+
+```bash
+# Yanıt başlıklarını göster (HTML gövdesi değil)
+curl -I https://example.com
+
+# Yönlendirmeleri takip et (her adımı ayrı ayrı göster)
+curl -IL https://astro.build
+
+# Gövdeyi dosyaya kaydet + süre istatistikleri
+curl -o sayfa.html -w "süre: %{time_total}s, kod: %{http_code}\n" https://example.com
+```
+
+Kritik bayraklar:
+
+| Bayrak | Yapar |
+| --- | --- |
+| `-I` | HEAD isteği; yalnızca başlıklar |
+| `-L` | Redirect'leri takip et |
+| `-v` | TLS handshake dahil her şeyi göster |
+| `-o dosya` | Çıktıyı dosyaya yaz |
+| `-X POST` | Metot seç |
+| `-d '{"a":1}'` | Gövde ekle (JSON) |
+| `-H "Header: değer"` | Başlık ekle |
+| `-s` | Sessiz mod (script'lerde) |
+| `-w` | İstatistik formatı (`http_code`, `time_total`...) |
+
+## Bir API çağrısı
+
+```bash
+curl -s -X POST https://api.example.com/siparis \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"urun":"kitap","adet":2}' \
+  -w "\nHTTP: %{http_code}\n"
+```
+
+Script'lerde `http_code` almaya özel ilgi: çıkış kodu değil **durum kodu** hata ayıklamanın dilidir (bir önceki dersten hatırla: 5xx sunucu, 4xx istemci).
+
+## Web terminalinde diagnoz seansı
+
+<TerminalSim
+  id="s1-curl"
+  title="diagnoz"
+  prompt="ogrenci@devops:~$"
+  welcome={[
+    'Staging uygulaması “açılmıyor”. curl ile daralt!',
+    'Sorular: site açılıyor mu? hangi kod geliyor? yönlendirme var mı?',
+  ]}
+  hint="curl -I http://staging.local → curl -IL http://staging.local → curl -s http://staging.local/health"
+  commands={{
+    'curl -I http://staging.local': {
+      out: [
+        'HTTP/1.1 301 Moved Permanently',
+        'Location: https://staging.local/',
+        '~301: kalıcı yönlendirme var — -L ile takip et!',
+      ],
+    },
+    'curl -IL http://staging.local': {
+      out: [
+        'HTTP/1.1 301 Moved Permanently',
+        'Location: https://staging.local/',
+        '',
+        'HTTP/2 200',
+        'server: nginx',
+        'content-type: text/html',
+        '+site aslında çalışıyor; sorunun kaynağı client tarafı olabilir.',
+      ],
+    },
+    'curl -s http://staging.local/health': {
+      out: ['{"status":"ok","db":"ok","uptime":1840}'],
+    },
+    'curl -v http://staging.local': {
+      out: [
+        '* Connected to staging.local (10.0.0.15) port 80',
+        '> GET / HTTP/1.1',
+        '< HTTP/1.1 301 Moved Permanently',
+        '~bağlantı ve TLS adımlarını da gösterir; verbose en detaylı mod.',
+      ],
+    },
+  }}
+/>
+
+## “Site erişilemiyor” diagnoz akışı
+
+Sıradaki tek bir cümleyi ezberle: **ağdan uygulamaya doğru daralt**.
+
+```bash
+# 1. Makine ayakta mı? (ağ katmanı)
+ping -c 2 staging.local
+
+# 2. Port açık mı? (transport katmanı)
+nc -zv staging.local 80
+
+# 3. HTTP ne diyor? (uygulama katmanı)
+curl -I http://staging.local
+
+# 4. Uygulama içi sağlık?
+curl -s http://staging.local/health
+```
+
+Her adım bir katmanı eler. Ping başarılı + port kapalı → firewall/uygulama kapalı. Port açık + HTTP 500 → uygulama hatası → loglara (Seviye 1'in süreçler dersindeki akış).
+
+<Callout type="info" title="Seviye 4 bağılantısı">
+  Bu akışın otomatikleştirilmiş, sürekli çalışan hali **synthetic monitoring**’dir:
+  `curl -s -o /dev/null -w "%{http_code}" https://site.com` her 30 saniyede bir cron/monitor
+  tarafından çalıştırılır ve başarısızsa uyarı basar. Seviye 4'te bunu Prometheus ile
+  kuracağız.
+</Callout>
+
+## JSON ve script dostu ipuçları
+
+```bash
+# JSON çıktısını düzgün gör
+curl -s https://api.example.com/durum | python3 -m json.tool
+
+# Yanıt süresi ölçümü — performans şikâyetlerinde ilk kanıt
+curl -s -o /dev/null -w "%{time_namelookup} DNS\n%{time_connect} bağlantı\n%{time_total} toplam\n" https://example.com
+```
+
+<Quiz
+  id="s1-curl"
+  questions={[
+    {
+      q: '`curl -IL https://site.com` ne yapar?',
+      options: [
+        'Siteyi indirip siler',
+        'Başlıkları gösterip yönlendirmeleri takip eder',
+        'Sadece gövdeyi gösterir',
+        'TLS’i devre dışı bırakır',
+      ],
+      answer: 1,
+      explain: '-I başlık modu, -L redirect takibi; ikisi birlikte yönlendirme zincirinin her adımını gösterir.',
+    },
+    {
+      q: 'Ping başarılı ama port 80 kapalı görünüyor. Sorun en muhtemel nerede?',
+      options: [
+        'DNS kaydında',
+        'Firewall/uygulama katmanında (servis kapalı ya da port kapalı)',
+        'Kullanıcının tarayıcısında',
+        'TLS sertifikasında',
+      ],
+      answer: 1,
+      explain:
+        'Makineye ağ yolu açıksa (ping OK) ama port kapalıysa: servis çalışmıyor ya da firewall engelliyor.',
+    },
+    {
+      q: 'Script içinde HTTP durum kodunu almak için curl -w ile hangi değişken?',
+      options: ['%{status}', '%{http_code}', '%{code}', '$HTTP_CODE'],
+      answer: 1,
+      explain: 'curl -w "%{http_code}" yanıttaki durum kodunu yazar; scriptler buna göre karar verir.',
+    },
+    {
+      q: 'Kullanıcı “site açılmıyor” dedi; curl -I 301 döndü. Ne anlama gelir?',
+      options: [
+        'Sunucu çöktü',
+        'Site çalışıyor ama başka adrese yönlendiriyor — sorunun kaynağı başka yerde olabilir',
+        'DNS kaydı yok',
+        'SSL sertifikası geçersiz',
+      ],
+      answer: 1,
+      explain:
+        '301 kalıcı yönlendirmedir; uygulama ayakta. Asıl hata istemci tarafında ya da hedefte olabilir.',
+    },
+  ]}
+/>

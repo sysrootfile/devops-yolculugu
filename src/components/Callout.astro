@@ -1,0 +1,15 @@
+---
+// Bilgi kutusu: info / tip / warn / danger
+interface Props {
+  type?: 'info' | 'tip' | 'warn' | 'danger';
+  title?: string;
+}
+const { type = 'info', title } = Astro.props;
+const icons: Record<string, string> = { info: 'ℹ️', tip: '💡', warn: '⚠️', danger: '🚨' };
+const defaults: Record<string, string> = { info: 'Bilgi', tip: 'İpucu', warn: 'Dikkat', danger: 'Tehlike' };
+---
+
+<aside class={`callout ${type}`}>
+  <div class="callout-title">{icons[type]} {title ?? defaults[type]}</div>
+  <slot />
+</aside>

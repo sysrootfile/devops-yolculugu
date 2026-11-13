@@ -1,0 +1,140 @@
+---
+title: 'Test Otomasyonu ve Test Piramidi'
+description: 'Unit/integration/E2E testleri, test piramidi, bu Astro sitesine uygulanmış örnekler ve hangi testin hangi katmanı koruduğu.'
+level: 2
+module: 'cicd'
+order: 2
+duration: 20
+objectives:
+  - 'Test piramidini ve katmanların dengesini açıklayabilmek'
+  - 'Bu projede hangi test türünün neyi koruyacağını belirleyebilmek'
+  - 'Testleri CI’a bağlamanın mantığını kurabilmek'
+prerequisites:
+  - 'seviye-2/cicd/pipeline-kavramlari'
+tags: ['test', 'kalite']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Test piramidi: denge sanatı
+
+Test tipleri maliyet ve hız açısından bir piramit oluşturur:
+
+```
+        /  E2E  \        ← yavaş, kırılgan, pahalı (az tutulur)
+       / Integration \    ← orta hız, sınırlar arası davranış
+      /     Unit      \   ← hızlı, ucuz, binlerce olabilir (çoğunluk)
+```
+
+| Katman | Neyi korur? | Süre | Kırılganlık |
+| --- | --- | --- | --- |
+| **Unit** | Tek fonksiyonun doğru davranışı | ms | Düşük |
+| **Integration** | Bileşenlerin birlikte çalışması (DB, API...) | sn–dk | Orta |
+| **E2E** | Gerçek tarayıcıda kullanıcı yolculuğu | dk | Yüksek |
+
+<Callout type="warn" title="Dondurulmuş dondurbaç (ice cream cone) antipattern’i">
+  Piramit tersine dönerse — çoğu test E2E — pipeline yavaşlar, testler rastgele kırılır
+  (flaky), ekib testlere güvenini kaybeder ve “test kırmızıysa da merge edelim” kültürü
+  doğar. Güven kaybolan test süitinin çıktısı gürültüdür, koruma değil.
+</Callout>
+
+## Bu siteyi test ederken ne koruruz?
+
+Bu Astro projesi üzerinden somutlaştıralım — Seviye 0'daki “dogfooding” işte burada:
+
+**1. Unit test — içerik şeması:**
+
+Astro'nun Content Collections, `level: 7` gibi geçersiz veriyi build anında reddeder. Bu aslında şema tabanlı bir testtir. Ek olarak kendi kontrollerini yazabilirsin:
+
+```js
+// test/content.test.mjs — tüm derslerin benzersiz id'ye sahip olduğu
+import { getCollection } from 'astro:content';
+// ...ders id'lerinde çakışma olmadığını, her modülde en az 1 ders olduğunu doğrula
+```
+
+**2. Integration test — derleme:**
+
+```bash
+npm run build   # başarısız MDX, bozuk import, eksik bileşen = kırmızı
+```
+
+“Build geçti” ifadesi bu projedeki en güçlü integration testidir: tüm sayfaların statik olarak üretilmesi, tüm iç linklerin çözülmesi demektir.
+
+**3. E2E test — kullanıcı yolculuğu:**
+
+Playwright ile: “ana sayfayı aç → Seviye 1'e tıkla → quiz cevapla → doğru skor kaydedildi mi?” Bu test, tarayıcıdaki interaktif bileşenlerin (quiz, terminal) gerçekten çalıştığını doğrular.
+
+## Hangi değişiklik hangi testi tetikler?
+
+Ekipte “test stratejisi” diyince konuşulan tablodur:
+
+| Değişiklik | Tetiklenmesi gereken |
+| --- | --- |
+| `components/Quiz.astro` | Unit (varsa) + E2E quiz senaryosu |
+| İçerik (.mdx) | Build + link kontrolü |
+| `styles/global.css` | Görsel smoke test (klasik E2E yeterli) |
+| `package.json` bağımlılığı | Tam süit + güvenlik taraması |
+
+## Testler pipeline'da nasıl koşar?
+
+```yaml
+# Yakında yazacağımız CI'ın iskeleti
+steps:
+  - run: npm ci            # temiz kurulum
+  - run: npm run build     # integration katmanı
+  - run: npx playwright test   # E2E (paralel, container içinde)
+```
+
+İki kural:
+
+1. **PR'da hızlı süit** koşar (unit + build) — geliştirici beklemesin
+2. **Merge sonrası tam süit** koşar (E2E dahil) — main her zaman kanıtlı olsun
+
+## Flaky test: güven düşmanı
+
+Her koşumda aynı sonucu vermeyen test (flaky) ekipti iki şekilde zehirler: kırmızıya alışma ve sahte yeşillere itimat. Tavsiyeler: önce flakiness'ın kökünü bul (async bekleme, paylaşılan veritabanı durumu...), düzeltemiyorsan testi **gürültü kanalına** ayır ama silme — ve kesinlikle diğer testlerin sonucunu çarpıtmasına izin verme.
+
+<Quiz
+  id="s2-test-otomasyonu"
+  questions={[
+    {
+      q: 'Test piramidine göre en çok hangi katmanda test olmalı?',
+      options: ['E2E', 'Integration', 'Unit', 'Manuel test'],
+      answer: 2,
+      explain:
+        'Unit testler hızlı ve ucuzdur; çoğunluğu onlar oluşturur. E2E az ama kritik yolculukları korur.',
+    },
+    {
+      q: 'Bu Astro projesinde “npm run build” hangi test katmanına yakın görev görür?',
+      options: ['Unit', 'Integration', 'E2E', 'Hiçbiri — build test değildir'],
+      answer: 1,
+      explain:
+        'Build, tüm bileşenlerin birlikte (şema, MDX, importlar) çalıştığını doğrular — integration niteliğindedir.',
+    },
+    {
+      q: 'Flaky testin en büyük zararı nedir?',
+      options: [
+        'Pipeline’ı yavaşlatması',
+        'Ekibin kırmızı sonuçlara alışıp testlere güvenini kaybetmesi',
+        'Disk dolması',
+        'Code review süresi uzaması',
+      ],
+      answer: 1,
+      explain:
+        'Güven kaybeden ekip kırmızıyı yok sayar; o zaman testlerin koruma işlevi bitmiştir.',
+    },
+    {
+      q: 'PR’daki hızlı süit ile merge sonrası tam süit ayrımı neden yapılır?',
+      options: [
+        'Geliştirici döngüsünü hızlı tutup main’i tam kanıtlı tutmak için',
+        'Test yazmak zor olduğu için',
+        'Runner maliyeti sıfırlansın diye',
+        'E2E testler PR’da çalışamaz diye',
+      ],
+      answer: 0,
+      explain:
+        'Feedback hızına göre katmanlama: PR’da dakikalar, merge sonrası derinlik.',
+    },
+  ]}
+/>

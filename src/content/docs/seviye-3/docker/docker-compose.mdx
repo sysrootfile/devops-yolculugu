@@ -1,0 +1,192 @@
+---
+title: 'Docker Compose: Çoklu Servis Orkestrasyonu'
+description: 'Site + monitoring + veritabanı gibi çoklu konteynerleri tek YAML ile yönetmek; network, volume ve compose mantığı.'
+level: 3
+module: 'docker'
+order: 4
+duration: 20
+objectives:
+  - 'docker-compose.yml ile çoklu servis tanımlayabilmek'
+  - 'Container network ve volume kavramlarını açıklayabilmek'
+  - 'Lokal geliştirme ortamını tek komutla ayağa kaldırabilmek'
+prerequisites:
+  - 'seviye-3/docker/dockerfile-ve-imaj'
+tags: ['docker', 'compose', 'geliştirme ortamı']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Tek container yeterli değil
+
+Gerçek sistemler birden çok parçadan oluşur: uygulama + veritabanı + cache + monitoring. Bunları elle `docker run` komutlarıyla ayağa kaldırmak (doğru sıra, doğru ağ, doğru flag'ler...) hataya açık bir manevradır. **Compose**, bu tanımları YAML'a yazmanı sağlar:
+
+```bash
+docker compose up -d      # TANIMLANDIĞI GİBİ her şey ayağa kalkar
+docker compose down       # hepsi kapanır
+```
+
+## compose dosyası
+
+`docker-compose.yml`:
+
+```yaml
+services:
+  site:
+    build: .                       # Dockerfile'dan kur
+    ports:
+      - "8080:80"                  # host:container
+    restart: unless-stopped
+
+  prometheus:                      # Seviye 4'ün kahramanı — şimdiden tanıyalım
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+```
+
+Artık `docker compose up` ile: site 8080'de, Grafana 3000'de, Prometheus 9090'da — **tek komut**.
+
+## Container network: servis adı = hostname
+
+Compose otomatik bir ağ yaratır; içinde **servis adı DNS adıdır**:
+
+```yaml
+# prometheus.yml içinde site'ı şöyle adreslersin:
+targets: ["site:80"]     # IP değil, servis adı!
+```
+
+Container'lar birbirine servis adıyla ulaşır — Kubernetes'teki service DNS'inin (bir sonraki modül) yerel provasıdır.
+
+## Volume: veri container'ın ölümünden uzun yaşamalı
+
+Container silinince **yazım katmanı da silinir** (Seviye 3 dersi 1). Veriyi kurtarmak için volume:
+
+```yaml
+volumes:
+  - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro   # bind mount: dosya bağla
+  - prom-data:/prometheus                                 # adlandırılmış volume
+volumes:
+  prom-data:
+```
+
+- **Bind mount:** host'taki klasör/dosyayı container'a bağla — geliştirmede kod senkronu için
+- **Named volume:** Docker'ın yönettiği depo — veritabanı verisi için
+
+## Web terminalinde compose
+
+<TerminalSim
+  id="s3-compose"
+  title="compose-lab"
+  prompt="$"
+  welcome={[
+    'Çoklu servis ortamı: site + prometheus + grafana.',
+    'Dene: docker compose up -d → docker compose ps → docker compose logs site → docker compose down',
+  ]}
+  hint="up -d → ps → logs site → stop → down"
+  commands={{
+    'docker compose up -d': {
+      out: [
+        '✔ Network compose_default    Created',
+        '✔ Container site        Started',
+        '✔ Container prometheus  Started',
+        '✔ Container grafana     Started',
+        '+3 servis ayağa kalktı: 8080 / 9090 / 3000',
+      ],
+    },
+    'docker compose ps': {
+      out: [
+        'NAME         STATUS          PORTS',
+        'site         Up 12 seconds   0.0.0.0:8080->80/tcp',
+        'prometheus   Up 12 seconds   0.0.0.0:9090->9090/tcp',
+        'grafana      Up 11 seconds   0.0.0.0:3000->3000/tcp',
+      ],
+    },
+    'docker compose logs site': {
+      out: [
+        'site-1  | /docker-entrypoint.sh: configuration complete',
+        'site-1  | nginx start successfully',
+      ],
+    },
+    'docker compose stop prometheus': { out: ['✔ Container prometheus  Stopped'] },
+    'docker compose down': {
+      out: [
+        '✔ Container grafana     Removed',
+        '✔ Container prometheus  Removed',
+        '✔ Container site        Removed',
+        '✔ Network compose_default  Removed',
+        '(named volume’lar varsayılan korunur!)',
+      ],
+    },
+  }}
+/>
+
+## Compose'un DevOps'taki yeri
+
+- **Lokal geliştirme:** “readme'ye göre 7 komut çalıştır” yerine `docker compose up` — yeni ekip üyesi ilk günde üretken olur (developer experience!)
+- **CI'da entegrasyon testleri:** test job'ı `docker compose up -d db` ile gerçek veritabanına karşı koşar
+- **Kubernetes'e geçiş köprüsü:** compose YAML'ı, K8s manifest'lerinin küçük kardeşi; kavramlar (service, volume, depends_on) birebir taşınır
+
+<Callout type="warn" title="Compose production için değildir (genelde)">
+  Compose tek makinede konuşur; çoğul sunucu, otomatik yeniden planlama, rolling update
+  gibi konular orkestratör (Kubernetes) işidir. Compose’u geliştirme/test ortamının
+  standardı olarak düşün.
+</Callout>
+
+<Quiz
+  id="s3-compose"
+  questions={[
+    {
+      q: 'Compose ağı içinde site container’ına prometheus nasıl ulaşır?',
+      options: [
+        'Host IP’si ile',
+        'Servis adı ile: site (Compose otomatik DNS sağlar)',
+        'localhost ile',
+        'Port 8080 ile host üzerinden',
+      ],
+      answer: 1,
+      explain:
+        'Compose ağı servis adlarını DNS’e çevirir; site:80 her container içinden çözülür.',
+    },
+    {
+      q: 'Container silindiğinde verinin kaybolmaması için çözüm?',
+      options: ['restart: always', 'Named volume veya bind mount', 'Daha büyük imaj', 'docker commit'],
+      answer: 1,
+      explain:
+        'Container’ın yazım katmanı geçicidir; kalıcı veri volume’de yaşar, container hayatından bağımsızdır.',
+    },
+    {
+      q: '`docker compose down` ile `stop` farkı?',
+      options: [
+        'down ağ ve container’ları kaldırır; stop yalnızca durdurur',
+        'Aynı şeydir',
+        'down imajları da siler',
+        'stop volume’ları da siler',
+      ],
+      answer: 0,
+      explain:
+        'down = teardown (container+network, volume korunur varsayılan); stop = yalnızca duraklat.',
+    },
+    {
+      q: 'Compose’un CI’da tipik kullanımı?',
+      options: [
+        'Production deploy',
+        'Integration testleri için gerçek bağımlılıkları (DB, cache) ayağa kaldırmak',
+        'Kubernetes yerini almak',
+        'Log saklama',
+      ],
+      answer: 1,
+      explain:
+        'Mock’lanmış servisler yerine gerçek bağımlılıklarla test: docker compose up -d postgres sonra test koş.',
+    },
+  ]}
+/>

@@ -1,0 +1,157 @@
+---
+import Base from '@layouts/Base.astro';
+import { buildNavTree, getAllDocs, sortLessons, toVM } from '@lib/content';
+
+const docs = await getAllDocs();
+const tree = buildNavTree(docs);
+const allLessons = sortLessons(docs).map(toVM);
+const totalLessons = allLessons.length;
+const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
+---
+
+<Base>
+  <section class="hero">
+    <div class="hero-emoji" aria-hidden="true">🚀</div>
+    <h1>DevOps Yolculuğu</h1>
+    <p>
+      Sıfırdan ileri seviyeye interaktif DevOps eğitimi: her derste quiz, gerçek komutlarla lab
+      ve tarayıcıda çalışan terminal simülatörü. Bu site <strong>kendisi de bir DevOps
+      projesi</strong> — öğrendikçe kendi altyapısını kuracaksın.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" id="continue-btn" href={allLessons[0]?.url ?? '#'}>▶ Kaldığın yerden devam et</a>
+      <a class="btn-ghost" href="#mufredat">📚 Müfredata göz at</a>
+    </div>
+  </section>
+
+  <section class="dash-stats" aria-label="İlerleme istatistikleri">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">tamamlanan ders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{totalLessons}</div>
+      <div class="stat-label">toplam ders</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{tree.length}</div>
+      <div class="stat-label">seviye</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">~{Math.round(totalMinutes / 60)} saat</div>
+      <div class="stat-label">toplam içerik</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-pct">0%</div>
+      <div class="stat-label">genel ilerleme</div>
+    </div>
+  </section>
+
+  <section class="howto" aria-label="Nasıl kullanılır">
+    <div class="h-card">
+      <div class="h-emoji">🧠</div>
+      <strong>Quiz ile pekiştir</strong>
+      Her dersin sonunda bilgi kontrolü var — cevapların anında açıklanır, skorun kaydedilir.
+    </div>
+    <div class="h-card">
+      <div class="h-emoji">💻</div>
+      <strong>Terminal simülatörünü kullan</strong>
+      Komutları güvenle dene: tarayıcıdaki web terminali gerçek komutları simüle eder.
+    </div>
+    <div class="h-card">
+      <div class="h-emoji">🧪</div>
+      <strong>Lab’ları uygula</strong>
+      Kendi makinende yapılacak adım adım görevler var — yap, doğrula, işaretle.
+    </div>
+    <div class="h-card">
+      <div class="h-emoji">📈</div>
+      <strong>İlerlemeni takip et</strong>
+      Tamamladığın dersler bu sayfada birikir; sıradaki ders otomatik seçilir.
+    </div>
+  </section>
+
+  <section class="dash-levels" id="mufredat" aria-label="Müfredat">
+    {
+      tree.map((level) => (
+        <div class="level-card" id={`seviye-${level.meta.id}`}>
+          <div class="lc-head">
+            <span class="lc-emoji" aria-hidden="true">{level.meta.emoji}</span>
+            <div>
+              <div class="lc-name" style={`color:${level.meta.color}`}>{level.meta.name}</div>
+              <div class="lc-tagline">{level.meta.tagline}</div>
+            </div>
+          </div>
+          <div class="lc-progress">
+            <div class="progress-track" style={`--bar-color:${level.meta.color}`}>
+              <div class="progress-fill" />
+            </div>
+            <span class="lc-count" data-level-total={level.total}>0 / {level.total}</span>
+          </div>
+          <div class="lc-body">
+            {level.modules.map((mod) => (
+              <div class="module-row">
+                <div class="mr-name">{mod.meta.name}</div>
+                {mod.lessons.map((lesson) => (
+                  <a class="lesson-row" href={lesson.url} data-lesson-id={lesson.id}>
+                    <span class="lr-check" aria-hidden="true">✓</span>
+                    <span class="lr-title">{lesson.title}</span>
+                    <span class="lr-duration">~{lesson.duration} dk</span>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <script>
+    // Dashboard ilerleme mantığı: localStorage → kartlar, barlar ve "devam et" butonu
+    function refreshDashboard() {
+      const rows = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a.lesson-row[data-lesson-id]')
+      );
+      let done = 0;
+
+      rows.forEach((row) => {
+        const id = row.getAttribute('data-lesson-id');
+        const isDone = id && localStorage.getItem('dy:done:' + id) === '1';
+        row.setAttribute('data-done', isDone ? 'true' : 'false');
+        if (isDone) done++;
+      });
+
+      // Seviye barları
+      document.querySelectorAll<HTMLElement>('.level-card').forEach((card) => {
+        const rows = card.querySelectorAll('a.lesson-row[data-lesson-id]');
+        const levelDone = Array.from(rows).filter(
+          (r) => r.getAttribute('data-done') === 'true'
+        ).length;
+        const fill = card.querySelector<HTMLElement>('.progress-fill');
+        const count = card.querySelector<HTMLElement>('.lc-count');
+        if (fill) fill.style.width = `${rows.length ? (levelDone / rows.length) * 100 : 0}%`;
+        if (count)
+          count.textContent = `${levelDone} / ${count.dataset.levelTotal ?? rows.length}`;
+      });
+
+      // Genel istatistikler
+      const pct = rows.length ? Math.round((done / rows.length) * 100) : 0;
+      const statDone = document.getElementById('stat-done');
+      const statPct = document.getElementById('stat-pct');
+      if (statDone) statDone.textContent = String(done);
+      if (statPct) statPct.textContent = pct + '%';
+
+      // "Kaldığın yerden devam et" — sıradaki tamamlanmamış ders
+      const nextLesson = rows.find((r) => r.getAttribute('data-done') !== 'true');
+      const continueBtn = document.getElementById('continue-btn');
+      if (continueBtn && nextLesson) {
+        continueBtn.setAttribute('href', nextLesson.getAttribute('href') ?? '#');
+      } else if (continueBtn) {
+        continueBtn.textContent = '🏁 Tüm dersler tamamlandı!';
+      }
+    }
+
+    refreshDashboard();
+    window.addEventListener('focus', refreshDashboard);
+  </script>
+</Base>

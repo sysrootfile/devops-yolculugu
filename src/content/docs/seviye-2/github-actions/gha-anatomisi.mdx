@@ -1,0 +1,160 @@
+---
+title: 'GitHub Actions Anatomisi'
+description: 'Workflow, job, step ve runner kavramları; YAML sözdizimi, tetikleyiciler ve matrix build — Actions’ın dil bilgisi.'
+level: 2
+module: 'github-actions'
+order: 1
+duration: 20
+objectives:
+  - 'Workflow dosyasının hiyerarşisini (on → jobs → steps) kurabilmek'
+  - 'Tetikleyicileri (push, PR, schedule, manual) kullanabilmek'
+  - 'Runner ve matrix build kavramlarını açıklayabilmek'
+prerequisites:
+  - 'seviye-2/cicd/pipeline-kavramlari'
+tags: ['github actions', 'ci']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Actions'ın yeri
+
+GitHub Actions, repoların içinde yaşayan bir CI/CD motorudur: `.github/workflows/*.yml` dosyasına yazdığın tanımı, GitHub **runner** adlı makinelerde çalıştırır. Repodan çıkmadan pipeline yazmak, DevOps öğreniminde en düşük sürtünmeli yoldur.
+
+## Hiyerarşi: workflow → job → step
+
+```yaml
+name: CI                          # workflow adı
+on: [push, pull_request]          # tetikleyiciler
+
+jobs:                             # bir workflow birden çok job içerir
+  build:                          # job kimliği
+    runs-on: ubuntu-latest        # hangi runner'da?
+    steps:                        # job, sıralı step'lerden oluşur
+      - uses: actions/checkout@v4 # hazır eylem: repoyu indir
+      - run: npm ci               # shell komutu
+      - run: npm run build
+```
+
+- **Workflow:** bir YAML dosyasının tamamı
+- **Job:** izole bir sanal makinede koşan iş birimi; job'lar varsayılan **paralel** çalışır
+- **Step:** job içindeki sıralı adım; `run` (komut) veya `uses` (hazır action)
+
+<Callout type="tip" title="Job'lar arasında veri taşımak">
+  Her job ayrı makinede çalışır — bir job’da kurduğun node_modules ötekinde YOKTUR.
+  Dosya paylaşımı artifact ile, değer paylaşımı `outputs` ile yapılır. Seviye 3'te
+  “build job’ı imaj üretir, deploy job’ı kullanır” desenini kurarken buna ihtiyacın olacak.
+</Callout>
+
+## Tetikleyiciler (on)
+
+```yaml
+on:
+  push:
+    branches: [main]          # yalnızca main'e push
+  pull_request:                # tüm PR'lar
+  schedule:
+    - cron: '0 9 * * 1'       # her pazartesi 09:00 (UTC)
+  workflow_dispatch:           # elle çalıştırma butonu
+```
+
+En yaygın desen: **PR'da doğrula, main'e push'ta deploy et**. Bu ayrım, Seviye 0'daki “PR'da hızlı süit, merge sonrası tam süit” stratejisinin uygulanışıdır.
+
+## Runner: işi kim yapar?
+
+- **GitHub-hosted runner:** `ubuntu-latest`, `windows-latest` — her workflow için temiz VM, ücretsiz kota
+- **Self-hosted runner:** kendi makinende/sunucunda çalışır — özel ağ, büyük derleme veya maliyet kontrolü için
+
+## Matrix: aynı işi çok ortamda
+
+```yaml
+jobs:
+  test:
+    strategy:
+      matrix:
+        node: [20, 22]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm test
+```
+
+Bu iki node sürümünde **paralel iki test job'ı** açar. `${{ }}` ifadeleri Actions'ın şablon dilidir; matrix değeri, secret'lar, event verileri hepsi bu sözdizimiyle okunur.
+
+## Sık yapılabilecek ilk hatalar
+
+1. **`npm install` yerine `npm ci`:** CI'da `npm ci` kullanılır — lockfile'a sadık, temiz kurulum
+2. **Aynı dosyaya paralel yazan job'lar:** job'lar izole makinede; varsayılanı paraleldir, sıralamak için `needs:`
+3. **`actions/checkout` unutmak:** runner boş makinedir; repo kodunu indirmeden build edemezsin
+
+```yaml
+deploy:
+  needs: build          # build bitmeden başlama
+  if: github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: echo "sadece main'de, build sonrası"
+```
+
+`needs` ile job zinciri kurarsın: *build → test → deploy*. Kırmızı bir adım, sonrakini otomatik bloke eder — pipeline'ın kalite kapıları.
+
+<Quiz
+  id="s2-gha-anatomisi"
+  questions={[
+    {
+      q: 'Actions hiyerarşisi doğru sırasıyla?',
+      options: [
+        'Step → Job → Workflow',
+        'Workflow → Job → Step',
+        'Job → Workflow → Step',
+        'Runner → Step → Job',
+      ],
+      answer: 1,
+      explain: 'Workflow (YAML dosyası) job’lardan, job’lar step’lerden oluşur.',
+    },
+    {
+      q: 'İki job arasında node_modules taşımak için hangisi gerekir?',
+      options: [
+        'Otomatik taşınır',
+        'Artifact paylaşımı',
+        'Aynı workflow’da olmak yeterli',
+        'npm ci tekrar çalıştırmak gerekmez',
+      ],
+      answer: 1,
+      explain:
+        'Her job izole makinededir; dosya aktarımı artifact (veya cache) ile yapılır, değerler outputs ile.',
+    },
+    {
+      q: '“Her pazartesi rapor üret” tetikleyicisi?',
+      options: ['on: manual', 'on: schedule + cron', 'on: push', 'on: timer'],
+      answer: 1,
+      explain: 'schedule tetikleyicisi cron sözdizimiyle (UTC) zamanlanmış koşum sağlar.',
+    },
+    {
+      q: 'CI’da npm install yerine npm ci tercih edilmesinin nedeni?',
+      options: [
+        'Daha hızlı yazılır',
+        'Lockfile’a sadık, tekrarlanabilir temiz kurulum',
+        'Sadece güncel paketleri kurar',
+        'Test atlar',
+      ],
+      answer: 1,
+      explain:
+        'npm ci lockfile’dan şaşmaz ve node_modules’u sıfırdan kurar; “bende çalışıyordu” belirsizliğini keser.',
+    },
+    {
+      q: '`needs: build` neyi sağlar?',
+      options: [
+        'Build ile paralel koşmayı',
+        'Build başarılı olmadan bu job’ın başlamamasını',
+        'Build’i iptal etmeyi',
+        'Aynı makinede çalışmayı',
+      ],
+      answer: 1,
+      explain: 'needs job zinciri kurar; önceki job kırmızıysa sonrakiler atlanır.',
+    },
+  ]}
+/>

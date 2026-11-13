@@ -1,0 +1,149 @@
+---
+title: 'Git İyi Pratikleri: Conventional Commits ve Semver'
+description: 'Commit mesajı standartları, anlamlı sürüm numaraları (semantic versioning), Git hooks ve changelog otomasyonunun temeli.'
+level: 1
+module: 'git'
+order: 3
+duration: 15
+objectives:
+  - 'Conventional Commits formatını uygulayabilmek'
+  - 'Semver’ın MAJOR.MINOR.PATCH mantığını açıklayabilmek'
+  - 'Git hooks ile kalite kontrolü otomatikleştirebilmek'
+prerequisites:
+  - 'seviye-1/git/branch-merge-rebase'
+tags: ['git', 'standartlar', 'otomasyon']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Commit mesajı neden standart olsun?
+
+“fix”, “düzenleme”, “asdasd” — üç ay sonra kimse ne demek istendiğini hatırlamaz. Standart commit mesajı:
+
+1. **changelog otomatikleştirir** (Seviye 5'te release otomasyonunda kullanacağız)
+2. **sürüm numarasını belirler** (hangi commit “major” tetikler?)
+3. **geçmişi aranabilir yapar** (“tüm breaking change'leri listele”)
+
+## Conventional Commits formatı
+
+```
+<tip>(<kapsam>): <kısa özet>
+
+<opsiyonel gövde>
+
+<opsiyonel footer: BREAKING CHANGE vb.>
+```
+
+Tip seti:
+
+| Tip | Ne zaman? |
+| --- | --- |
+| `feat` | Yeni özellik |
+| `fix` | Hata düzeltmesi |
+| `docs` | Dokümantasyon |
+| `refactor` | Davranış değişmeyen yapısal iyileştirme |
+| `test` | Test ekleme/düzeltme |
+| `chore` | Yapılandırma, bağımlılık, araç |
+| `ci` | CI pipeline değişikliği |
+
+```bash
+feat(auth): Google ile giriş desteği
+fix(api): 500 hatasına yol açan null kontrol eksikliği
+chore!: Node 22 zorunluluğu   # ünlem = BREAKING CHANGE
+```
+
+## Semantic Versioning (Semver)
+
+Sürüm numarası: **MAJOR.MINOR.PATCH** (`v2.4.1`)
+
+| Artar | Ne zaman | Örnek |
+| --- | --- | --- |
+| **MAJOR** | Uyumluluğu kıran değişiklik | API'den parametre kaldırma |
+| **MINOR** | Geriye uyumlu yeni özellik | Yeni endpoint |
+| **PATCH** | Geriye uyumlu hata düzeltme | Crash fix'i |
+
+Conventional Commits + Semver kombinasyonu otomasyona dönüşür: `feat` commit'i MINOR artırır, `fix` PATCH, `BREAKING CHANGE` MAJOR. `semantic-release` gibi araçlar bunu uçtan uca yapar.
+
+<Callout type="tip" title="Mülakat klasiği">
+  “v2.10.0 ile v2.2.0’ı karşılaştır” — metin olarak yanlış (10 < 2), Semver olarak doğru
+  (10 > 2). Sürüm karşılaştırmaları metin değil, sayı üçlüsü üzerinden yapılır.
+</Callout>
+
+## Git hooks: commit anında kalite kapısı
+
+`.git/hooks/` altındaki scriptler Git olaylarında otomatik çalışır. En çok kullanılanlar:
+
+- **pre-commit:** commit öncesi kontrol (lint, format, büyük dosya engeli)
+- **commit-msg:** mesaj formatı doğrulama
+- **pre-push:** push öncesi test
+
+Basit bir pre-commit örneği:
+
+```bash
+#!/usr/bin/env bash
+# .git/hooks/pre-commit — build çıktısını repoya engelle
+if git diff --cached --name-only | grep -q "^dist/"; then
+  echo "❌ dist/ dosyaları commit edilemez (build çıktısı!)"
+  exit 1
+fi
+```
+
+Tek kişi için yeterli ama ekipte sorun: hooks `.git/` klasöründe olduğu için **versiyonlanmaz**. Çözüm: [husky](https://typicode.github.io/husky/) gibi araçlar hook'ları repoda yönetir (Seviye 2'de CI'a bağlayacağız).
+
+<LabBox
+  id="s1-git-pratikler-lab"
+  title="Standartları işle"
+  verify={['git log --oneline -5']}
+>
+  1. Bu repoya `git switch -c feat/quiz-deneme` ile bir dal aç.
+  2. Herhangi bir MDX dosyasına kozmetik bir düzenleme yap.
+  3. `git commit -m "docs(s1): yazım düzeltmesi"` ile Conventional formatı kullan.
+  4. `git log --oneline` ile formatın düştüğünü gör.
+  5. Dalı `main`e merge edip `git branch -d feat/quiz-deneme` ile temizle — tam bir mini PR akışı!
+</LabBox>
+
+<Quiz
+  id="s1-git-pratikler"
+  questions={[
+    {
+      q: '‘feat’ commit’i Semver’da hangi bileşeni artırmalı?',
+      options: ['MAJOR', 'MINOR', 'PATCH', 'Hiçbiri'],
+      answer: 1,
+      explain:
+        'Geriye uyumlu yeni özellik MINOR artırır; BREAKING CHANGE ise MAJOR (veya ünlemle işaretlenir).',
+    },
+    {
+      q: 'API’den kullanılan bir parametrenin kaldırılması hangi sürüm artışını gerektirir?',
+      options: ['PATCH', 'MINOR', 'MAJOR', 'Sürüm değişmez'],
+      answer: 2,
+      explain:
+        'Uyumluluğu kıran değişiklik = MAJOR. Bağımlı müşterilerin güncelleme sırasında kırılacağı bellidir.',
+    },
+    {
+      q: 'Git hooks’un ekiple paylaşılmasındaki sorun ve çözümü?',
+      options: [
+        'Yavaş çalışır — önbellek eklenir',
+        'Hooks versiyonlanmaz — husky gibi araçlarla repo içinde yönetilir',
+        'Sadece root kullanabilir — izin verilir',
+        'Sorun yoktur, otomatik paylaşılır',
+      ],
+      answer: 1,
+      explain:
+        '.git/hooks klasörü clone’la taşınmaz; modern pratik hook yönetimini repoya taşımaktır.',
+    },
+    {
+      q: '‘refactor’ tipinin tanımı?',
+      options: [
+        'Yeni özellik ekler',
+        'Davranış değiştirmeden kod yapısını iyileştirir',
+        'Sadece test yazar',
+        'Sürüm etiketi oluşturur',
+      ],
+      answer: 1,
+      explain:
+        'refactor: dışarıdan bakınca davranış aynı, içeride yapı daha iyi. MINOR bile artırmaz.',
+    },
+  ]}
+/>

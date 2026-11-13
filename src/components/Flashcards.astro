@@ -1,0 +1,69 @@
+---
+// Ters çevrilebilir bilgi kartları — terim öğrenme için.
+interface Props {
+  id: string;
+  cards: { front: string; back: string }[];
+}
+
+const { id, cards } = Astro.props;
+---
+
+<div class="flashcards" data-fc-id={id}>
+  <div class="fc-stage">
+    <div class="fc-card" role="button" tabindex="0" aria-label="Kartı çevir">
+      <div class="fc-face front">
+        <span class="fc-label">Terim</span>
+        <span class="fc-text"></span>
+      </div>
+      <div class="fc-face back">
+        <span class="fc-label">Açıklama</span>
+        <span class="fc-text"></span>
+      </div>
+    </div>
+  </div>
+  <div class="fc-nav">
+    <button type="button" data-dir="-1" aria-label="Önceki kart">←</button>
+    <span class="fc-count">1 / {cards.length}</span>
+    <button type="button" data-dir="1" aria-label="Sonraki kart">→</button>
+  </div>
+</div>
+
+<script define:vars={{ id, cards }}>
+  const root = document.querySelector('[data-fc-id="' + id + '"]');
+  if (root) {
+    const card = root.querySelector('.fc-card');
+    const front = root.querySelector('.fc-face.front .fc-text');
+    const back = root.querySelector('.fc-face.back .fc-text');
+    const count = root.querySelector('.fc-count');
+    let idx = 0;
+
+    function show() {
+      card.classList.remove('flipped');
+      // çevirme animasyonu bitmeden içeriği değiştir
+      setTimeout(() => {
+        front.textContent = cards[idx].front;
+        back.textContent = cards[idx].back;
+      }, card.classList.contains('flipped') ? 200 : 0);
+      count.textContent = idx + 1 + ' / ' + cards.length;
+    }
+
+    card.addEventListener('click', () => card.classList.toggle('flipped'));
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        card.classList.toggle('flipped');
+      }
+    });
+    root.querySelectorAll('[data-dir]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dir = Number(btn.dataset.dir);
+        idx = (idx + dir + cards.length) % cards.length;
+        show();
+      });
+    });
+
+    front.textContent = cards[0].front;
+    back.textContent = cards[0].back;
+  }
+</script>

@@ -1,0 +1,82 @@
+---
+// Mermaid diyagramı — kütüphane CDN'den yüklenir (yalnızca diyagram olan sayfalarda).
+// Tema değişince 'dy:themechange' olayını dinleyip yeniden çizer.
+interface Props {
+  chart: string;
+  caption?: string;
+}
+
+const { chart, caption } = Astro.props;
+---
+
+<div class="mermaid-box" data-mermaid-box>
+  <pre class="mermaid-source" hidden>{chart}</pre>
+  <div class="mermaid-target"></div>
+  {caption && <p style="font-size:13px;color:var(--text-faint);margin:10px 0 0">{caption}</p>}
+</div>
+
+<script>
+  type MermaidAPI = {
+    initialize: (cfg: Record<string, unknown>) => void;
+    render: (id: string, text: string) => Promise<{ svg: string }>;
+  };
+
+  let mermaidPromise: Promise<MermaidAPI> | null = null;
+
+  function loadMermaid(): Promise<MermaidAPI> {
+    if (!mermaidPromise) {
+      mermaidPromise = import(
+        /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+      ).then((mod: any) => {
+        const m = (mod.default ?? mod) as MermaidAPI;
+        return m;
+      });
+    }
+    return mermaidPromise;
+  }
+
+  let counter = 0;
+
+  async function renderAll() {
+    const boxes = document.querySelectorAll<HTMLElement>('[data-mermaid-box]');
+    if (boxes.length === 0) return;
+    const theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'neutral';
+    try {
+      const mermaid = await loadMermaid();
+      mermaid.initialize({
+        startOnLoad: false,
+        theme,
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      });
+      for (const box of boxes) {
+        const source = box.querySelector<HTMLElement>('.mermaid-source')!.textContent!.trim();
+        const target = box.querySelector<HTMLElement>('.mermaid-target')!;
+        try {
+          const { svg } = await mermaid.render('dy-mermaid-' + counter++, source);
+          target.innerHTML = svg;
+        } catch (err) {
+          console.error('Mermaid render hatası:', err);
+          showFallback(box, source);
+        }
+      }
+    } catch (err) {
+      console.warn('Mermaid yüklenemedi (çevrimdışı olabilir):', err);
+      boxes.forEach((box) => {
+        const source = box.querySelector<HTMLElement>('.mermaid-source')!.textContent!.trim();
+        showFallback(box, source);
+      });
+    }
+  }
+
+  function showFallback(box: HTMLElement, source: string) {
+    const target = box.querySelector<HTMLElement>('.mermaid-target')!;
+    target.innerHTML = '';
+    const pre = document.createElement('pre');
+    pre.className = 'mermaid-fallback';
+    pre.textContent = source;
+    target.appendChild(pre);
+  }
+
+  renderAll();
+  document.addEventListener('dy:themechange', renderAll);
+</script>

@@ -1,0 +1,187 @@
+---
+title: 'LAB: Bu Siteyi Dockerize Etmek'
+description: 'Dockerfile’ın her direktifini bu Astro projesi üzerinden öğren: builder stage, nginx serving ve katman sırası optimizasyonu.'
+level: 3
+module: 'docker'
+order: 2
+duration: 25
+objectives:
+  - 'Astro projesi için production Dockerfile yazabilmek'
+  - 'Katman sırasının build cache üzerindeki etkisini görebilmek'
+  - 'Container’ı çalıştırıp doğrulayabilmek'
+prerequisites:
+  - 'seviye-3/docker/konteyner-ve-vm'
+tags: ['docker', 'astro', 'lab', 'dockerfile']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Hedef
+
+Bu sitenin kendisini bir Docker imajına dönüştüreceğiz — içinde **nginx** ile servis edilecek statik dosyalar. Bu Dockerfile, sonraki derslerde Kubernetes'e taşınacak imajın ta kendisi.
+
+## Dockerfile'ı yazalım
+
+Repo köküne `Dockerfile`:
+
+```dockerfile
+# 1. Aşama: siteyi derle (builder)
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+# bağımlılık tanımlarını önce kopyala (katman cache'i için!)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# kaynak kodu kopyala ve derle
+COPY . .
+RUN npm run build
+
+# 2. Aşama: yalnızca üretilen dosyaları taşı (minimal çalışma imajı)
+FROM nginx:1.27-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+EXPOSE 80
+```
+
+Satır satır anlatalım:
+
+| Direktif | Ne yapar? | Neden böyle? |
+| --- | --- | --- |
+| `FROM ... AS builder` | Derleme ortamı (multi-stage — bir sonraki ders) | Node sadece derlemek için gerekli, servise gerek yok |
+| `WORKDIR /app` | Sonraki komutların dizini | Mutlak yol kirliliğini önler |
+| `COPY package*.json ./` | Önce manifest'ler | Kod her değiştiğinde `npm ci` katmanı **cache'ten** gelir |
+| `RUN npm ci` | Bağımlılık kurulumu | Lockfile'a sadık (Seviye 2 kuralı) |
+| `COPY . .` | Kaynak kod | Sık değişen şey en sonda |
+| `COPY --from=builder` | Ürünü yeni imaja taşı | node_modules (400MB+) son imaja taşınmaz! |
+
+## Katman sırasının gücünü kanıtla
+
+<TerminalSim
+  id="s3-dockerfile"
+  title="docker-build"
+  prompt="$"
+  welcome={[
+    'İki senaryoyu simüle ediyoruz: (1) kod değişikliği sonrası build, (2) package.json değişikliği sonrası build.',
+    'Dene: docker build .  → sonra: docker build . (kod değişikliği) → docker build . (bağımlılık değişikliği)',
+  ]}
+  hint="İlk build uzun sürer; kod değişikliğinde npm ci cache’ten gelir, bağımlılık değişikliğinde yeniden kurulur."
+  commands={{
+    'docker build .': {
+      out: [
+        'Step 3/7 : COPY package*.json ./',
+        'Step 4/7 : RUN npm ci          → 45s',
+        'Step 6/7 : COPY . .',
+        'Step 7/7 : RUN npm run build   → 12s',
+        '+Successfully built site:latest (toplam ~60s)',
+      ],
+    },
+    'docker build . -t site:v2': {
+      out: [
+        'Step 3/7 : COPY package*.json ./   → CACHED ✅',
+        'Step 4/7 : RUN npm ci              → CACHED ✅',
+        'Step 6/7 : COPY . .                → değişti',
+        'Step 7/7 : RUN npm run build       → 12s',
+        '+Successfully built site:v2 (toplam ~14s!)',
+      ],
+    },
+    'docker build . -t site:v3 --no-cache': {
+      out: [
+        'package-lock.json değişti varsayımı:',
+        'Step 4/7 : RUN npm ci          → 45s (cache GEÇERSİZ)',
+        'Step 6/7 : COPY . .            → değişti',
+        'Step 7/7 : RUN npm run build   → 12s',
+        '+Successfully built site:v3 (toplam ~58s)',
+        '~İpucu: bağımlılık değişikliği, altındaki TÜM katmanları yeniden yapar.',
+      ],
+    },
+  }}
+/>
+
+Gördüğün desen: **npm ci'dan sonra gelen her adım, npm ci ile birlikte cache'ten düşer.** Bu yüzden manifest'ler önce kopyalanır.
+
+## Çalıştır ve doğrula
+
+```bash
+docker build -t devops-site:1.0.0 .
+docker run --rm -p 8080:80 devops-site:1.0.0
+# tarayıcı: http://localhost:8080  → site çalışıyor!
+```
+
+Faydalı kontrol komutları:
+
+```bash
+docker images                          # imajlar + boyutlar
+docker ps                              # çalışan container'lar
+docker exec -it <id> sh                # container içine gir (Alpine'da bash yok, sh var)
+curl -I http://localhost:8080          # HTTP 200 görmelisin
+```
+
+<Callout type="info" title="Neden nginx?">
+  Astro statik dosya üretir; bunu servis etmenin en hafif yolu nginx (ya da caddy)
+  gibidir. Node + Express ile “statik dosya servis etmeye” çalışmak yerine uzman aracı
+  kullanmak — Unix felsefesinin devamı (Seviye 1: her araç tek işi iyi yapar).
+</Callout>
+
+<LabBox
+  id="s3-dockerfile-lab"
+  title="İmajını üret"
+  verify={['docker images | grep devops-site', 'curl -I http://localhost:8080 | head -1']}
+>
+  1. Docker Desktop (Windows/Mac) veya Docker Engine kurulu olmalı: `docker version`.
+  2. Yukarıdaki Dockerfile'ı repoya ekle.
+  3. `.dockerignore` dosyası oluştur: `node_modules`, `dist`, `.git`, `.astro` — kopyalanmaması gerekenler (boyut + cache bozulması).
+  4. `docker build -t devops-site:1.0.0 .`
+  5. `docker run --rm -p 8080:80 devops-site:1.0.0` → tarayıcıda kontrol et.
+  6. Bir derse bir satır ekle, yeniden build al: `npm ci` katmanının **CACHED** olduğunu izle.
+</LabBox>
+
+<Quiz
+  id="s3-dockerfile"
+  questions={[
+    {
+      q: '`COPY package.json package-lock.json ./`’in `COPY . .`’ten önce gelmesinin nedeni?',
+      options: [
+        'Docker bunu zorunlu kılar',
+        'Bağımlılık katmanı cache’ten gelir; kod değişikliği npm ci’yı yeniden çalıştırmaz',
+        'Dosya boyutu küçülsün',
+        'Güvenlik gereği',
+      ],
+      answer: 1,
+      explain:
+        'Katman sırası = cache sırası. Manifest’ler önce kopyalanırsa sık kod değişiklikleri bağımlılık katmanını bozmaz.',
+    },
+    {
+      q: 'Multi-stage build’in bu projedeki asıl getirisi?',
+      options: [
+        'Daha hızlı build',
+        'Son imajda Node/npm/node_modules taşımamak — nginx + statik dosyalar kalır',
+        'Daha iyi loglar',
+        'Sertifika yönetimi',
+      ],
+      answer: 1,
+      explain:
+        'Builder’ın tüm ağır araçları (400MB+ node_modules) atılır; ürün (dist/) sade nginx imajına taşınır.',
+    },
+    {
+      q: '`.dockerignore`’da node_modules olmasının nedeni?',
+      options: [
+        'Docker node_modules çalıştıramaz',
+        'Gereksiz büyük kopya — container içinde zaten npm ci ile kurulur',
+        'GitHub kuralı',
+        'Sertifika hatası verir',
+      ],
+      answer: 1,
+      explain:
+        'Kopyalanan node_modules hem imajı şişirir hem farklı platformda bozabilir; kurulum container içinde yapılır.',
+    },
+    {
+      q: 'Alpine taban imajın container’a girip komut çalıştırmak için hangi kabuk?',
+      options: ['bash', 'powershell', 'sh', 'zsh'],
+      answer: 2,
+      explain: 'Alpine minimaldir: bash yoktur, sh (busybox) vardır: docker exec -it <id> sh',
+    },
+  ]}
+/>

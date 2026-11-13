@@ -1,0 +1,16 @@
+{
+  "name": "devops-yolculugu",
+  "type": "module",
+  "version": "0.1.0",
+  "description": "Interaktif DevOps öğrenme platformu — Astro 6 ile sıfırdan ileri seviyeye",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^5.0.0",
+    "astro": "^6.0.0"
+  }
+}

@@ -1,0 +1,121 @@
+---
+// Interaktif quiz — her ders sonunda kullanılır.
+// Cevaplar anında değerlendirilir, en iyi skor localStorage'a yazılır (dy:quiz:<id>).
+export interface QuizQuestion {
+  q: string;
+  options: string[];
+  answer: number; // doğru seçeneğin indeksi
+  explain?: string;
+}
+
+interface Props {
+  id: string;
+  title?: string;
+  questions: QuizQuestion[];
+}
+
+const { id, title = 'Bilgi Kontrolü', questions } = Astro.props;
+---
+
+<section class="quiz" data-quiz-id={id} data-quiz-total={questions.length}>
+  <div class="quiz-head">
+    <span class="quiz-emoji" aria-hidden="true">🧠</span>
+    <h3>{title}</h3>
+  </div>
+  <p class="quiz-sub">{questions.length} soru · doğru cevap hemen açıklanır</p>
+
+  {
+    questions.map((qq, qi) => (
+      <div class="q-item" data-q={qi}>
+        <div class="q-text">{qi + 1}. {qq.q}</div>
+        <div class="q-options">
+          {qq.options.map((opt, oi) => (
+            <button class="q-option" type="button" data-o={oi} data-answer={qq.answer === oi ? '1' : '0'}>
+              {opt}
+            </button>
+          ))}
+        </div>
+        {qq.explain && <div class="q-explain">💡 {qq.explain}</div>}
+      </div>
+    ))
+  }
+
+  <div class="quiz-score">
+    <span class="score-text">Henüz cevaplanmadı</span>
+    <button class="quiz-reset" type="button">↺ Sıfırla</button>
+  </div>
+</section>
+
+<script>
+  type QuizSection = HTMLElement & { dataset: DOMStringMap };
+
+  function initQuiz(section: QuizSection) {
+    if ((section as any)._quizReady) return;
+    (section as any)._quizReady = true;
+
+    const total = Number(section.dataset.quizTotal ?? '0');
+    const quizId = section.dataset.quizId ?? 'anon';
+    const items = Array.from(section.querySelectorAll<HTMLElement>('.q-item'));
+    const scoreText = section.querySelector<HTMLElement>('.score-text')!;
+    const resetBtn = section.querySelector<HTMLButtonElement>('.quiz-reset')!;
+    let answered = 0;
+    let correct = 0;
+
+    function updateScore() {
+      if (answered === 0) {
+        scoreText.textContent = 'Henüz cevaplanmadı';
+      } else if (answered < total) {
+        scoreText.textContent = `${answered}/${total} soru cevaplandı · ${correct} doğru`;
+      } else {
+        const stored = localStorage.getItem('dy:quiz:' + quizId);
+        let best = 0;
+        try {
+          best = stored ? JSON.parse(stored).c ?? 0 : 0;
+        } catch {}
+        if (correct > best) localStorage.setItem('dy:quiz:' + quizId, JSON.stringify({ c: correct, t: total }));
+        const emoji = correct === total ? '🎉' : correct >= total / 2 ? '👍' : '💪';
+        scoreText.textContent = `${emoji} Skor: ${correct}/${total}`;
+      }
+    }
+
+    items.forEach((item) => {
+      const buttons = Array.from(item.querySelectorAll<HTMLButtonElement>('.q-option'));
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (item.dataset.answered === '1') return;
+          item.dataset.answered = '1';
+          answered++;
+          const isCorrect = btn.dataset.answer === '1';
+          if (isCorrect) {
+            btn.classList.add('correct');
+            correct++;
+          } else {
+            btn.classList.add('wrong');
+            const right = buttons.find((b) => b.dataset.answer === '1');
+            if (right) right.classList.add('correct');
+          }
+          buttons.forEach((b) => (b.disabled = true));
+          const explain = item.querySelector('.q-explain');
+          if (explain) explain.classList.add('show');
+          updateScore();
+        });
+      });
+    });
+
+    resetBtn.addEventListener('click', () => {
+      answered = 0;
+      correct = 0;
+      items.forEach((item) => {
+        delete item.dataset.answered;
+        item.querySelectorAll('.q-option').forEach((b) => {
+          b.disabled = false;
+          b.classList.remove('correct', 'wrong');
+        });
+        item.querySelector('.q-explain')?.classList.remove('show');
+      });
+      updateScore();
+    });
+  }
+
+  document.querySelectorAll<QuizSection>('section[data-quiz-id]').forEach(initQuiz);
+</script>

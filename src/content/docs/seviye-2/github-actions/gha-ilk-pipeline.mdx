@@ -1,0 +1,187 @@
+---
+title: 'LAB: Bu Repoya Gerçek Pipeline Kurma'
+description: 'GitHub Actions ile lint→build→kontrol zincirini bu DevOps Yolculuğu reposuna kur; her push’ta siteyi doğrulayan ilk pipeline’ın.'
+level: 2
+module: 'github-actions'
+order: 2
+duration: 25
+objectives:
+  - 'Bu repoya çalışan bir CI workflow dosyası yazmak'
+  - 'PR ve push tetiklemeli akışı kurmak'
+  - 'Pipeline loglarını okuyup hata ayıklayabilmek'
+prerequisites:
+  - 'seviye-2/github-actions/gha-anatomisi'
+  - 'seviye-1/git/git-temelleri'
+tags: ['github actions', 'lab', 'astro']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Bu derste ne yapacağız?
+
+Seviye 0'da söz vermiştik: bu site kendi altyapısı üzerinde öğretilecek. Şimdi sıra **kendi CI'ını yazmakta**. Repo'yu GitHub'a gönderdiğinde her push ve PR'da otomatik olarak:
+
+1. Bağımlılıklar kurulacak
+2. Site derlenecek (bu, içerik şeması kontrolü demek!)
+3. Üretilen HTML içinde temel kontroller yapılacak
+
+## Workflow dosyası
+
+`.github/workflows/ci.yml` dosyasını oluştur:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Siteyi derle
+        run: npm run build
+
+      - name: Üretilen sayfaları doğrula
+        run: |
+          test -d dist || { echo "dist/ yok!"; exit 1; }
+          test -f dist/index.html || { echo "ana sayfa üretilmemiş!"; exit 1; }
+          echo "✅ $(find dist -name 'index.html' | wc -l) sayfa üretildi"
+```
+
+Son step'te çok satırlı bir script görüyorsun (`run: |`): her satır ayrı bir kabuk komutudur ve `exit 1` ile pipeline'ı bilinçli kırmızıya çevirebilirsin — **kontrolün kendisi de kod**.
+
+## Ne oldu burada? (adım adım)
+
+1. `checkout` — runner boş makinedir; repoyu indirir
+2. `setup-node` + `cache: npm` — Node 22 kurar, npm cache'i (bir sonraki derste detay) bağlar
+3. `npm ci` — lockfile'a sadık temiz kurulum
+4. `npm run build` — Astro derler. **Bu step aslında testtir:** geçersiz frontmatter, bozuk MDX import'u veya eksik bileşen varsa build kırmızı olur
+5. Doğrulama — `dist/` içinde index.html var mı, kaç sayfa üretildi?
+
+## Kendi makinende provayı yap
+
+<TerminalSim
+  id="s2-gha-ilk-pipeline"
+  title="local-ci-prova"
+  prompt="ogrenci@devops:~$"
+  welcome={[
+    'CI’a göndermeden önce provayı yerelde yap.',
+    'Amaç: aynı adımları elle koşturup her birinin çıktısını görmek.',
+  ]}
+  hint="npm ci → npm run build → ls dist → grep -c 'astro' dist/index.html"
+  commands={{
+    'npm ci': {
+      out: [
+        'added 214 packages in 9s',
+        '(lockfile’daki birebir sürümler kuruldu)',
+      ],
+    },
+    'npm run build': {
+      out: [
+        'astro v6.4.8 building...',
+        '✓ 17 page(s) built in 4s',
+        '+build başarılı — CI’daki 4. step bu çıktıyı verir',
+      ],
+    },
+    'ls dist': { out: ['index.html  ders/  _astro/  favicon.svg'] },
+    "grep -c 'DevOps' dist/index.html": { out: ['12'] },
+  }}
+/>
+
+## GitHub'a bağlama
+
+<LabBox
+  id="s2-gha-lab"
+  title="CI'ı canlıya taşı"
+  verify={['git log --oneline -3', 'git remote -v']}
+>
+  1. Bu repoyu GitHub'da bir depoya gönder (önceki seviyenin lab'ında remote tanımlamıştın; yoksa GitHub'da boş repo aç → `git remote add origin ...` → `git push -u origin main`).
+  2. `.github/workflows/ci.yml` dosyasını yukarıdaki içerikle oluştur ve commit'le: `ci: ilk pipeline` (Conventional Commits — bir önceki seviye!).
+  3. GitHub'da **Actions** sekmesine gir: koşum listesini gör.
+  4. Bir derse bilerek bozuk bir şey ekle (ör. bir MDX dosyasında `level: 9`), push et — pipeline'ın **kırmızı** olduğunu ve hatanın logunda göründüğünü izle.
+  5. Hatayı düzelt, push et — yeşil. **Tebrikler: içerik kalitesi artık CI kontrolünde.**
+
+  Not: Public repolarda GitHub Actions ücretsizdir.
+</LabBox>
+
+<Callout type="info" title="Log okuma pratiği">
+  Kırmızı bir job’da tıklanacak sıra: hangi step kırmızı? → o step’in son 20 satırı →
+  en alttaki ilk hata satırı. Loglar uzundur ama hatanın kendisi hep diptedir; “render
+  hatası: invalid frontmatter at seviye-3/docker/x.mdx” gibi bir satır, tam dosyayı ve
+  satırı işaret eder.
+</Callout>
+
+## Bundan sonrası
+
+Pipeline artık her değişikliği doğruluyor. Sırada iki güçlendirme var: **secrets** (bir sonraki ders — deploy kimlik bilgileri) ve **cache/artifact** (dersten sonra — hız). Seviye 3'te bu pipeline'ın sonuna Docker imajı üretimini ekleyeceğiz.
+
+<Quiz
+  id="s2-gha-ilk-pipeline"
+  questions={[
+    {
+      q: 'Bu projede `npm run build` step’inin test değeri nedir?',
+      options: [
+        'Hiç — sadece derler',
+        'Frontmatter şeması, MDX ve iç linklerin tümünü doğrular',
+        'Sadece CSS’i kontrol eder',
+        'Sadece hız ölçer',
+      ],
+      answer: 1,
+      explain:
+        'Astro build, içerik şeması + MDX + bileşen bağımlılıklarını uçtan uca derler; herhangi biri bozuksa kırmızı.',
+    },
+    {
+      q: 'Pipeline’da bilinçli `exit 1` neyi ifade eder?',
+      options: [
+        'Hata ayıklama modu',
+        'Kontrol scriptinin koşulu sağlanmadığında step’i kırmızıya çevirmesi',
+        'Job’ın paralel çalışması',
+        'Cache temizliği',
+      ],
+      answer: 1,
+      explain:
+        'Doğrulama step’leri koşulları shell exit koduyla bildirir; 0 geç, 0 değil dur.',
+    },
+    {
+      q: 'Kırmızı job’da log okuma sırası?',
+      options: [
+        'Baştan sona satır satır',
+        'Kırmızı step → son satırlar → ilk hata satırı',
+        'Sadece workflow adına bak',
+        'Ekibin herkesine mesaj atmak',
+      ],
+      answer: 1,
+      explain: 'Hata logların dibindedir; kırmızı adımı bulmak problem alanını anında daraltır.',
+    },
+    {
+      q: 'PR açıldığında bu workflow ne yapar?',
+      options: [
+        'Hiçbir şey — sadece main push’ında çalışır',
+        'Build job’ını koşturur ve PR’ın yeşil/kırmızı durumunu gösterir',
+        'Sadece deploy yapar',
+        'Reponun kopyasını siler',
+      ],
+      answer: 1,
+      explain:
+        'on: pull_request tetikleyicisi sayesinde PR’lar doğrulanır; korunan main’e girmeden kalite kapısı çalışır.',
+    },
+  ]}
+/>

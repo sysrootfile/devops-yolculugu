@@ -1,0 +1,132 @@
+---
+title: 'Platform Engineering ve İç Platformlar'
+description: 'İç geliştirici platformu (IDP) yaklaşımı: golden path’ler, self-service ve platformu ürün gibi yönetmek — DevOps’un ölçeklenme cevabı.'
+level: 5
+module: 'gitops'
+order: 3
+duration: 18
+objectives:
+  - 'DevOps’un ölçeklenme problemini ve platform engineering cevabını açıklayabilmek'
+  - 'Golden path kavramını tasarlayabilmek'
+  - 'Platformu ürün metrikleriyle yönetebilmek'
+prerequisites:
+  - 'seviye-5/gitops/gitops-argocd-flux'
+tags: ['platform engineering', 'idp', 'developer experience']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## “Herkes DevOps yapıyor” tuzlağının sonu
+
+DevOps kültürü “herkes kendi servisini deploy etsin” der — ölçek küçükken muhteşemdir. 40 ekip, 300 servislik bir şirkette ise:
+
+- Her ekip kendi pipeline'ını, kendi Terraform'unu, kendi “dockerfile tarzını” yazar → **300 farklı deployment yöntemi**
+- Güvenlik politikası 300 farklı şekilde ihlal edilebilir
+- Yeni ekip, altyapıyı öğrenmekle haftalarını harcar
+- En iyi pratiğe sahip ekip, bilgisini **kopyalanamaz** formda tutar
+
+**Platform engineering** cevabı: ortak ihtiyaçları (build, deploy, monitoring, secret, log...) bir **iç platform** olarak ürünleştirmek — “herkes kendi çamurunu yapsın” yerine “herkes iyi yolun üstünde hızlı yürüsün”.
+
+## Golden path: önerilen hızlı yol
+
+**Golden path** = en iyi pratiklerin önceden birleştirilmiş, tek komutla kullanılabilen standart yolu:
+
+```
+backstage ile yeni servis oluştur (şablon):
+✅ repo (standart yapı + CODEOWNERS)
+✅ CI pipeline (lint, test, scan)
+✅ Dockerfile + build
+✅ ArgoCD app (auto-sync)
+✅ monitoring + dashboard + SLO tanımı
+✅ secret referansları
+→ dakikalar içinde “Hello, Production!”
+```
+
+İki altın kural:
+
+1. **Yol zorunlu değil, çekici:** ekip özel ihtiyaçta alternatif kullanabilir — ama path'i seçmek **en hızlı** yol olmalı (önündeki kapıyı kilitleyerek değil, yolu yükselterek yönetmek)
+2. **“Paved road” sürümlenir:** platform, bağımlılık güncellemelerini şablon altındaki tüm servislere dağıtabilir — 300 repo'yu elle yükseltmek yok
+
+## Platform bir üründür
+
+Kullanıcısı **geliştiriciler** olan bir ürün:
+
+| Ürün disiplini | Platforma karşılığı |
+| --- | --- |
+| Ürün vizyonu | “Onboarding süresi 2 hafta → 1 gün” gibi hedefler |
+| Kullanıcı araştırması | Geliştirici anketleri, DX ölçümleri |
+| Roadmap | En sık istenen yetenekler (self-service DB mi, preview env mi?) |
+| Dokümantasyon | İyi onboarding rehberi — platformun vitrini |
+| Metrik | **Adoption** (kaç servis platformu kullanıyor?), DORA metrikleri, ticket süresi |
+
+<Callout type="warn" title="Başarısızlık modu: zorla dayatılan tool">
+  Platform ekibi “kullanın” diye değil, “kullanmak avantajlı” diye çalışmalıdır.
+  Zorlamayla dayatılan araçlar, yan yolların (shadow IT) ve kapılı bypass’ların
+  doğurur. Adoption metriği düşüyorsa ürün kötü demektir — platformun sorunu
+  kullanıcıya değil, ürüne bakması gerekir.
+</Callout>
+
+## Backstage ve teknoloji manzarası
+
+- **Backstage** (Spotify, CNCF): geliştirici portalının açık kaynak standardı — servis kataloğu, şablonlarla servis üretimi (Scaffolder), dokümantasyon
+- **Portal = vitrin, platform = motor:** arka planda yine bildiğin araçlar (Actions, ArgoCD, Terraform, Prometheus) çalışır; platform onları tek arayüzde standardize eder
+- **AI yardımcıları:** şablon doldurma, incident özetleme gibi noktalarda hızla yerleşiyor — ama altın yol yine şablonların disiplinine dayanır
+
+## Platform engineering ve bu reponun ilişkisi
+
+Bu sitenin kendi altyapısı — standart şablonlu Astro projesi, tek CI, tek Dockerfile, tanımlı monitoring — **tek servisli bir golden path** örneğidir. Capstone'da bunu uçtan uca kurduğunda, elinde platform ekibinin geliştiricilere sunduğu yolun birebir kopyası olacak: *aynı yapı, çoklu servis ölçeğinde.*
+
+<Quiz
+  id="s5-platform"
+  questions={[
+    {
+      q: 'Platform engineering’in çözdüğü ölçek problemi?',
+      options: [
+        'Sunucu sayısı artışı',
+        'Her ekibin kendi deployment pratikleriyle altyapının tekrarlanamaz ve denetlenemez hale gelmesi',
+        'Bulut maliyeti',
+        'Test yazma zorluğu',
+      ],
+      answer: 1,
+      explain:
+        'Onlarca ekipte “herkes DevOps” = N farklı yol. Platform, iyi pratiği kopyalanabilir bir ürüne çevirir.',
+    },
+    {
+      q: 'Golden path’in yönetim felsefesi?',
+      options: [
+        'Alternatif yolları kilitlemek',
+        'Yolu çekici kılmak: en hızlı ve kolay yol standart yol olsun — zorlama değil davet',
+        'Sadece dev ortamında geçerli',
+        'Doküman yazmamak',
+      ],
+      answer: 1,
+      explain:
+        'Adoption, dayatma değil değerle gelir; engellenen yan yollar da bulunur ve daha riskli olur.',
+    },
+    {
+      q: 'Platform ekibinin ana başarı metriği hangisi olmalı?',
+      options: [
+        'Ticket sayısı',
+        'Adoption + geliştirici deneyimi/DORA metriklerinin iyileşmesi',
+        'Platform ekibinin büyüklüğü',
+        'Yazılan YAML miktarı',
+      ],
+      answer: 1,
+      explain:
+        'Platform bir üründür: kullanım (adoption) ve kullanıcının hızındaki iyileşme gerçek başarı göstergesidir.',
+    },
+    {
+      q: 'Backstage’in temel işlevlerinden biri?',
+      options: [
+        'Container runtime',
+        'Servis kataloğu + şablonlarla (Scaffolder) yeni servis üretimi',
+        'Log saklama',
+        'Sertifika üretimi',
+      ],
+      answer: 1,
+      explain:
+        'Backstage, IDP’nin portal katmanıdır: katalog, şablonlarla servis doğurma, dokümantasyon vitrini.',
+    },
+  ]}
+/>

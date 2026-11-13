@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Siteyi derle
+        run: npm run build
+
+      - name: Üretilen sayfaları doğrula
+        run: |
+          test -d dist || { echo "dist/ yok!"; exit 1; }
+          test -f dist/index.html || { echo "ana sayfa üretilmemiş!"; exit 1; }
+          echo "✅ $(find dist -name 'index.html' | wc -l) sayfa üretildi"

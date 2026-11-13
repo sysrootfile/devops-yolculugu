@@ -1,0 +1,136 @@
+---
+// Tarayıcı içinde çalışan bash simülatörü.
+// `commands` sözlüğündeki komutlar birebir eşleşir; satır önekleri:
+//   "!" ile başlarsa hata rengi, "~" ipucu rengi, "+" başarı rengi.
+export interface TermCommand {
+  out?: string[];
+}
+
+interface Props {
+  id: string;
+  title?: string;
+  prompt?: string;
+  welcome?: string[];
+  hint?: string; // yanlış komut yazıldığında gösterilecek genel ipucu
+  commands: Record<string, TermCommand>;
+}
+
+const { id, title = 'bash', prompt = '$', welcome = [], hint, commands } = Astro.props;
+
+function lineClass(text: string): string {
+  if (text.startsWith('!')) return 't-err';
+  if (text.startsWith('~')) return 't-hint';
+  if (text.startsWith('+')) return 't-ok';
+  return '';
+}
+function lineText(text: string): string {
+  return ['!', '~', '+'].includes(text[0]) ? text.slice(1) : text;
+}
+---
+
+<div
+  class="term"
+  data-term-id={id}
+  data-term-prompt={prompt}
+  data-commands={JSON.stringify(commands)}
+  data-hint={hint}
+>
+  <div class="term-bar">
+    <span class="dot red" aria-hidden="true"></span>
+    <span class="dot yellow" aria-hidden="true"></span>
+    <span class="dot green" aria-hidden="true"></span>
+    <span class="term-title">{title} — web terminali</span>
+  </div>
+  <div class="term-body" aria-live="polite">
+    {welcome.map((line) => <div class={lineClass(line)}>{lineText(line)}</div>)}
+  </div>
+  <div class="term-input-row">
+    <span class="t-prompt">{prompt}</span>
+    <input
+      class="term-input"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="komut yaz ve Enter'a bas"
+      aria-label="Terminal komutu"
+    />
+  </div>
+  <div class="term-progress" data-total={Object.keys(commands).length}>
+    0 / {Object.keys(commands).length} komut keşfedildi
+  </div>
+</div>
+
+<script>
+  function initTerminal(term: HTMLElement) {
+    if ((term as any)._termReady) return;
+    (term as any)._termReady = true;
+
+    const body = term.querySelector<HTMLElement>('.term-body')!;
+    const input = term.querySelector<HTMLInputElement>('.term-input')!;
+    const progressEl = term.querySelector<HTMLElement>('.term-progress')!;
+    const prompt = term.dataset.termPrompt ?? '$';
+    const id = term.dataset.termId ?? 'anon';
+    const globalHint = term.dataset.hint ?? '';
+
+    let commands: Record<string, { out?: string[] }> = {};
+    try {
+      commands = JSON.parse(term.dataset.commands ?? '{}');
+    } catch {}
+
+    const discovered = new Set<string>();
+
+    function renderLine(text: string) {
+      const div = document.createElement('div');
+      if (text.startsWith('!')) div.className = 't-err';
+      else if (text.startsWith('~')) div.className = 't-hint';
+      else if (text.startsWith('+')) div.className = 't-ok';
+      div.textContent = ['!', '~', '+'].includes(text[0]) ? text.slice(1) : text;
+      body.appendChild(div);
+    }
+
+    function updateProgress() {
+      progressEl.textContent = `${discovered.size} / ${progressEl.dataset.total} komut keşfedildi`;
+      if (progressEl.dataset.total && discovered.size === Number(progressEl.dataset.total)) {
+        renderLine('+🎉 Senaryo tamamlandı! Tüm komutları buldun.');
+        localStorage.setItem('dy:term:' + id, '1');
+      }
+    }
+
+    function scrollBottom() {
+      body.scrollTop = body.scrollHeight;
+    }
+
+    updateProgress();
+
+    term.addEventListener('click', () => input.focus());
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const raw = input.value.trim();
+      if (!raw) return;
+      input.value = '';
+
+      const cmdRow = document.createElement('div');
+      cmdRow.className = 't-cmd';
+      const p = document.createElement('span');
+      p.className = 't-prompt';
+      p.textContent = prompt + ' ';
+      const c = document.createElement('span');
+      c.textContent = raw;
+      cmdRow.append(p, c);
+      body.appendChild(cmdRow);
+
+      const def = commands[raw];
+      if (def) {
+        (def.out ?? ['(çıktı yok)']).forEach(renderLine);
+        discovered.add(raw);
+      } else {
+        renderLine('!bash: ' + raw.split(' ')[0] + ': command not found');
+        if (globalHint) renderLine('~ipucu: ' + globalHint);
+      }
+      updateProgress();
+      scrollBottom();
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.term[data-term-id]').forEach(initTerminal);
+</script>

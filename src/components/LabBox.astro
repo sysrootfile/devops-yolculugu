@@ -1,0 +1,55 @@
+---
+// Uygulamalı lab kutusu: görev açıklaması (slot) + doğrulama komutları + tamamlandı işareti.
+// İşaret `dy:lab:<id>` anahtarıyla localStorage'a yazılır.
+interface Props {
+  id: string;
+  title: string;
+  verify?: string[]; // doğrulama komutları
+}
+
+const { id, title, verify } = Astro.props;
+---
+
+<div class="lab" data-lab-id={id}>
+  <div class="lab-head">
+    <span class="lab-emoji" aria-hidden="true">🧪</span>
+    <span>LAB · {title}</span>
+  </div>
+  <div class="lab-body">
+    <slot />
+
+    {
+      verify && verify.length > 0 && (
+        <div class="lab-verify">
+          <div class="lv-title">✅ Doğrulama</div>
+          {verify.map((v) => (
+            <code>{v}</code>
+          ))}
+        </div>
+      )
+    }
+
+    <div class="lab-done-row">
+      <button class="lab-done-btn" type="button" data-lab-btn={id}>□ Bu lab’ı tamamladım</button>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ id }}>
+  const key = 'dy:lab:' + id;
+  const root = document.querySelector('[data-lab-id="' + id + '"]');
+  if (root) {
+    const btn = root.querySelector('[data-lab-btn]');
+    const sync = () => {
+      const done = localStorage.getItem(key) === '1';
+      btn.classList.toggle('done', done);
+      btn.textContent = done ? '✓ Tamamlandı' : '□ Bu lab’ı tamamladım';
+    };
+    btn.addEventListener('click', () => {
+      const done = localStorage.getItem(key) === '1';
+      localStorage.setItem(key, done ? '0' : '1');
+      sync();
+    });
+    sync();
+  }
+</script>

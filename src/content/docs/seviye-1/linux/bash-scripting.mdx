@@ -1,0 +1,193 @@
+---
+title: 'Bash Scripting: Otomasyonun İlk Adımı'
+description: 'Değişkenler, koşullar, döngüler ve hata kontrolüyle ilk otomasyon scriptin; “elle yaptığın her şeyi scriptleştir” refleksi.'
+level: 1
+module: 'linux'
+order: 5
+duration: 25
+objectives:
+  - 'Değişken ve parametrelerle basit bash script yazabilmek'
+  - 'if/for yapılarını ve hata kontrolünü (set -e) kullanabilmek'
+  - 'Elle tekrarlanan bir işi scripte dönüştürebilmek'
+prerequisites:
+  - 'seviye-1/linux/temel-komutlar'
+tags: ['bash', 'otomasyon', 'scripting']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Otomasyon DevOps’un kalbidir — ve başlangıcı scripttir
+
+DevOps’un “A”sı **Automation**’dur. Ve otomasyonun en erişilebilir biçimi bir bash scriptidir: elle yaptığın her işlem dizisini (`apt install ... → conf kopyala → servisi başlat → log kontrol et`) tek bir dosyaya yazarsın; artık 5 dakikalık iş, 5 saniyelik `./kurulum.sh` olur.
+
+## İlk script
+
+```bash
+#!/usr/bin/env bash
+# shebang: bu dosyayı bash ile çalıştır
+
+echo "Merhaba, otomasyon!"
+```
+
+Kaydet: `merhaba.sh` → çalıştırılabilir yap → çalıştır:
+
+```bash
+chmod +x merhaba.sh
+./merhaba.sh
+```
+
+`#!/usr/bin/env bash` satırına **shebang** denir: sistem “bu dosyayı hangi yorumlayıcıyla çalıştıracağını” buradan okur.
+
+## Değişkenler ve parametreler
+
+```bash
+#!/usr/bin/env bash
+APP_NAME="odeme-servisi"        # = etrafında BOŞLUK OLMAZ
+ENV=${1:-dev}                   # ilk parametre yoksa 'dev' varsay
+
+echo "Uygulama: $APP_NAME"
+echo "Ortam: $ENV"
+echo "Zaman: $(date +%H:%M)"    # $(...) = komut çıktısını değişkene göm
+```
+
+Çalıştırma: `./script.sh prod` → `ENV=prod` olur.
+
+Sık kullanılan özel değişkenler:
+
+| Değişken | Anlamı |
+| --- | --- |
+| `$1, $2, ...` | Scripte verilen parametreler |
+| `$?` | Son komutun çıkış kodu (0 = başarı) |
+| `$$` | Scriptin kendi PID'i |
+| `$#` | Parametre sayısı |
+
+## Koşullar ve hata kontrolü
+
+```bash
+#!/usr/bin/env bash
+# sağlıklı scriptin omurgası
+set -euo pipefail
+# -e: bir komut başarısız olursa hemen dur
+# -u: tanımsız değişken kullanılırsa dur
+# -o pipefail: zincirdeki herhangi bir komut başarısız olursa zincir başarısız sayılır
+
+if [ "$1" = "prod" ]; then
+  echo "⚠️  Prod ortamına deploy ediliyor — dikkat!"
+elif [ "$1" = "dev" ]; then
+  echo "Dev ortamına deploy ediliyor."
+else
+  echo "Kullanım: $0 {dev|prod}"
+  exit 1
+fi
+```
+
+<Callout type="tip" title="set -e alışkanlığı">
+  Hatasız yazılmış script yoktur; problem, hatayı **görmezden gelmesidir**. `set -euo pipefail`
+  ile başlayan script, ilk hata anında durur — yarıda kalmış, hatasız görünen bir deploy
+  bırakmaz. CI script'lerinde bu üçlü standarttır (Seviye 2'de tekrar göreceksin).
+</Callout>
+
+## Döngüler: tekrar makinesi
+
+```bash
+# klasördeki her .conf dosyasını yedekle
+for dosya in /etc/app/*.conf; do
+  cp "$dosya" "${dosya}.bak"
+  echo "yedeklendi: $dosya"
+done
+
+# 1'den 3'e kadar sunucuları kontrol et
+for sunucu in sunucu-1 sunucu-2 sunucu-3; do
+  if ping -c 1 -W 1 "$sunucu" > /dev/null; then
+    echo "$sunucu ✅ erişilebilir"
+  else
+    echo "$sunucu ❌ erişilemiyor"
+  fi
+done
+```
+
+## Küçük ama gerçek bir script: sağlık kontrolü
+
+```bash
+#!/usr/bin/env bash
+# saglik-kontrol.sh — mini uptime kontrolü
+set -uo pipefail
+
+URL=${1:-http://localhost:80}
+KOD=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+
+if [ "$KOD" = "200" ]; then
+  echo "✅ $URL yanıt verdi (200)"
+  exit 0
+else
+  echo "❌ $URL sorunlu (HTTP $KOD)"
+  exit 1
+fi
+```
+
+Bu 15 satır, Seviye 4'te kuracağımız monitoring'in mikroversiyonudur. Fark: monitoring bunu her 30 saniyede, otomatik, uyarı üretterek yapar.
+
+<LabBox
+  id="s1-linux-bash-lab"
+  title="İlk otomasyon scriptini yaz"
+  verify={['./gunluk-yedek.sh', 'ls ~/devops-gunluk/yedek/ | wc -l']}
+>
+  1. `~/devops-gunluk/` klasöründe `gunluk.md` dosyan olsun (önceki lab'dan).
+  2. `gunluk-yedek.sh` adlı script yaz: dosyayı `yedek/` klasörüne, adının sonuna tarih ekleyerek kopyalasın
+     (ipucu: `cp gunluk.md "yedek/gunluk-$(date +%Y%m%d-%H%M).md"`).
+  3. Scriptin başına `set -euo pipefail` ekle, başarılı/başarısız durumu `echo` ile yazdır.
+  4. İki kez çalıştır ve `yedek/` içinde iki ayrı kopya olduğunu doğrula.
+
+  Bonus: scripti `cron`'a eklersen otomatik yedek olur — `crontab -e` ile
+  `0 9 * * * ~/devops-gunluk/gunluk-yedek.sh` (her sabah 9).
+</LabBox>
+
+<Quiz
+  id="s1-linux-bash"
+  questions={[
+    {
+      q: '`set -e` ne yapar?',
+      options: [
+        'Scripti daha hızlı çalıştırır',
+        'Bir komut başarısız olursa scripti hemen durdurur',
+        'Hata mesajlarını gizler',
+        'Ortam değişkenlerini sıfırlar',
+      ],
+      answer: 1,
+      explain:
+        'set -e fail-fast sağlar: ilk başarısız komutta script durur; “hatalı ama tamamlanmış görünen” işlemleri önler.',
+    },
+    {
+      q: 'Script parametresi olarak verilen ortamın yoksa “dev” varsayılmasını sağlayan ifade?',
+      options: ['$ENV=dev', 'ENV=${1:-dev}', 'ENV=$1 dev', 'if ENV=dev'],
+      answer: 1,
+      explain: '${1:-dev} sözdizimi: $1 tanımlıysa onu, değilse “dev”i kullan.',
+    },
+    {
+      q: '`$?` neyi saklar?',
+      options: [
+        'Scriptin PID’ini',
+        'Son komutun çıkış kodunu (0 = başarı)',
+        'Parametre sayısını',
+        'Kullanıcı adını',
+      ],
+      answer: 1,
+      explain:
+        'Çıkış kodu, komutun başarısını makinelere anlatır; CI pipeline’ları ve scriptler buna göre karar verir.',
+    },
+    {
+      q: 'Elle tekrarlanan 5 dakikalık bir iş için DevOps refleksi nedir?',
+      options: [
+        'Hızlı elle yapmaya devam et',
+        'Scripte dönüştür ki tekrarlar sıfırlansın ve hatasız olsun',
+        'Ekibe devret',
+        'Takvime ekle',
+      ],
+      answer: 1,
+      explain:
+        'Otomasyon refleksi DevOps’un çekirdeğidir: script hem hatayı azaltır hem belge görevi görür.',
+    },
+  ]}
+/>

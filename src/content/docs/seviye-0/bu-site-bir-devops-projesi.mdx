@@ -1,0 +1,142 @@
+---
+title: 'Bu Site Bir DevOps Projesi'
+description: 'Repo turu: Astro projesinin anatomisi, içerik koleksiyonları, CI pipeline’ı ve ilerleyen seviyelerde bu siteyi nasıl dönüşüştüreceğiz.'
+level: 0
+module: 'giris'
+order: 4
+duration: 15
+objectives:
+  - 'Bu reponun dosya yapısını ve Astro altyapısını tanımak'
+  - '“Öğrendiğin aracı sitenin kendisinde kullan” (dogfooding) yaklaşımını kavramak'
+  - 'Seviyeler ilerledikçe siteyi nereye taşıyacağını görmek'
+prerequisites:
+  - 'seviye-0/devops-nedir'
+tags: ['astro', 'repo', 'dogfooding']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import Mermaid from '@components/Mermaid.astro';
+
+## Neden “dogfooding”?
+
+Eating your own dog food — yani kendi ürününü kendin kullanmak. Bu repo iki görevi aynı anda görür:
+
+1. **Ders kitabı:** DevOps’u interaktif şekilde öğretir.
+2. **Canlı denek tavşanı:** Öğrendiğin her aracı, bu sitenin kendisine uygularsın.
+
+Seviye 2’de bu repoya gerçek bir CI pipeline’ı yazacaksın; Seviye 3’te siteyi Docker imajına dönüştürecek, Kubernetes’e koyacaksın; Seviye 4’te monitoring’e alacaksın; Seviye 5’te uçtan uca production’a taşıyacaksın. Böylece hiçbir kavram “başka bir örnek proje”de havada kalmaz.
+
+## Repoyu gezinelim
+
+```
+devops-yolculugu/
+├── astro.config.mjs        # Astro yapılandırması (Shiki teması, MDX)
+├── package.json            # bağımlılıklar ve script'ler
+├── tsconfig.json           # TypeScript + @ alias tanımları
+├── public/                 # değişmeden kopyalanan dosyalar (favicon vb.)
+├── .github/workflows/      # CI pipeline'ı (Seviye 2'de yazacağız)
+└── src/
+    ├── content.config.ts   # içerik şeması (Zod ile doğrulanır)
+    ├── consts.ts           # seviye/modül metadata'sı
+    ├── styles/global.css   # tasarım sistemi
+    ├── lib/content.ts      # müfredat ağacı, sıralama, gezinme
+    ├── layouts/            # Base + Lesson şablonları
+    ├── components/         # Quiz, TerminalSim, LabBox, Flashcards...
+    ├── pages/              # rotalar (/ ve /ders/[...slug])
+    └── content/docs/       # ⭐ BÜTÜN DERSLER BURADA
+        ├── seviye-0/
+        ├── seviye-1/{linux,ag,git}/
+        ├── seviye-2/{cicd,github-actions}/
+        ├── seviye-3/{docker,kubernetes,bulut-iac}/
+        ├── seviye-4/{observability,sre,devsecops}/
+        └── seviye-5/{gitops,capstone}/
+```
+
+## Astro'nun burada iyi bir seçim olmasının nedenleri
+
+Astro bir **web framework’ü**; “content-driven” siteler için tasarlanmış. Bu repo için üç özelliği kritik:
+
+1. **Content Collections:** `src/content/docs/` altındaki her `.mdx` dosyası, `content.config.ts`’te tanımlı şemayla **build zamanında doğrulanır**. Bir derste `level: 7` yazarsan build **başarısız olur** — yani içerik kalitesi bile bir CI kontrolüdür.
+2. **Islands Architecture:** Quiz, terminal simülatörü gibi interaktif parçalar yalnızca gerektiğinde JavaScript yükler; statik metin saf HTML kalır. Sonuç: hızlı site.
+3. **Statik çıktı:** `npm run build` komutu saf HTML/CSS/JS üretir — hosting’i en basit, en ucuz ve en güvenli formatta. Deployment derslerinde bu özelliği bol bol kullanacağız.
+
+<Callout type="info" title="Şema = sözleşme">
+  İçerik şeması bir “sözleşmedir”: her dersin başlığı, seviyesi, süresi ve hedefleri şemayla
+  garanti edilir. Bu, Infrastructure as Code fikrinin içerik dünyasındaki karşılığıdır —
+  yapılandırma koddan ayrı değil, doğrulanabilir bir parçasıdır.
+</Callout>
+
+## Sitelerin nasıl derlendiğine hızlı bakış
+
+<Mermaid
+  chart={`flowchart LR
+    A["MDX ders dosyaları"] --> B{"Zod şema<br/>kontrolü"}
+    B -->|hata| X["❌ Build başarısız"]
+    B -->|geçti| C["Astro derleyicisi"]
+    C --> D["Statik HTML/CSS/JS"]
+    D --> E["Hosting<br/>(Seviye 2+ tema)"]`}
+  caption="Içerikten canlı siteye giden yol — Seviye 2'de bu zinciri CI'a bağlayacağız."
+/>
+
+Komut satırında görmek istersen, bu reponun kökünde:
+
+```bash
+npm install    # bağımlılıkları kur (bir kez)
+npm run dev    # geliştirme sunucusu (localhost:4321)
+npm run build  # statik siteyi dist/ klasörüne üret
+```
+
+## Bu sitenin ilerleyen seviyelerdeki dönüşümü
+
+| Seviye | Siteye yapacağın ekleme |
+| --- | --- |
+| 1 | Git ile versiyonlanmış hali; değişiklikleri branch/PR ile yönetme |
+| 2 | GitHub Actions ile otomatik lint + build + deploy |
+| 3 | Dockerfile, imaj registry, lokal Kubernetes kümesine deploy |
+| 4 | Uptime monitoring, log/metric toplama |
+| 5 | GitOps akışı, canary/blue-green deploy senaryosu |
+
+Tek bir projede hem **yazan** hem **çalıştıran** tarafı deneyimlemek — DevOps’un özü tam olarak budur.
+
+<Quiz
+  id="s0-repo-turu"
+  questions={[
+    {
+      q: 'Content Collections şeması bir ders dosyasında hatalı veri (örn. level: 7) bulursa ne olur?',
+      options: [
+        'Veri sessizce düzeltilir',
+        'Ders build dışında bırakılır',
+        'Build başarısız olur ve hata raporlanır',
+        'Sadece bir uyarı yazdırılır, build devam eder',
+      ],
+      answer: 2,
+      explain:
+        'Zod şeması build zamanında doğrulanır; şemayı ihlal eden içerik build’i fail eder. Bu, içerik kalitesini CI kontrolüne çevirir.',
+    },
+    {
+      q: 'Astro’nun Islands Architecture’ı neyi sağlar?',
+      options: [
+        'Tüm sayfaların istemci tarafında render edilmesini',
+        'İnteraktif parçaların yalnızca gerektiğinde JS yüklemesini',
+        'Veritabanı bağlantısını otomatikleştirmeyi',
+        'CDN kurulumunu',
+      ],
+      answer: 1,
+      explain:
+        'Islands yaklaşımında statik HTML varsayılandır; interaktif bileşenler (quiz, terminal) izole “adalar” olarak hidre olur.',
+    },
+    {
+      q: '“Dogfooding” bu repoda ne anlama gelir?',
+      options: [
+        'Derslerin köpek emojisiyle başlaması',
+        'Öğrenilen her aracın bu sitenin kendisine uygulanması',
+        'Yemek molası önerileri',
+        'Kodun hayvan destekli projelere bağışlanması',
+      ],
+      answer: 1,
+      explain:
+        'Kendi ürününü/aracını kendin kullanmak: öğrendiğin CI/CD, Docker, monitoring kavramlarını bu sitenin gerçek altyapısında uygularsın.',
+    },
+  ]}
+/>

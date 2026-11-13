@@ -1,0 +1,151 @@
+---
+title: 'Skill Matrisi ve Mülakat Rehberi'
+description: 'Seviyeye göre beceri haritası, sık mülakat soruları ve yolculuğu tamamladıktan sonraki büyüme yolları.'
+level: 5
+module: 'capstone'
+order: 3
+duration: 25
+objectives:
+  - 'Kendi beceri seviyeni matris üzerinden değerlendirebilmek'
+  - 'Sık DevOps mülakat sorularına yapılandırılmış cevaplar kurabilmek'
+  - 'Öğrenmeyi bitirdikten sonra büyüme yollarını seçebilmek'
+prerequisites:
+  - 'seviye-5/capstone/capstone-prod-yolculugu'
+tags: ['kariyer', 'mülakat', 'değerlendirme']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import Flashcards from '@components/Flashcards.astro';
+
+## Beceri matrisi: neredesin?
+
+Bu reponun seviyelerini sektörel beklentiye çevirirsek:
+
+| Beceri alanı | Junior | Mid | Senior |
+| --- | --- | --- | --- |
+| **Linux/Ağ** | Temel komutlar, SSH, servis yönetimi | Perf analizi, ağ diagnoz | Kernel/resource tuning, güvenli ağ mimarisi |
+| **CI/CD** | Pipeline yazma | Pipeline mimarisi, cache/artifact | Çoklu ekip ölçeğinde platform tasarımı |
+| **Container/K8s** | İmaj yazma, temel manifest'ler | Helm, ingress, troubleshooting | Operasyon, HPA/servis mesh, küme tasarımı |
+| **IaC/Bulut** | Tek provider temel kaynaklar | Modül tasarımı, state yönetimi | Multi-env, cost/policy as code |
+| **Observability** | Dashboard okuma | Alarm tasarımı, PromQL | SLO programı, incident kültürü kurmak |
+| **Güvenlik** | Secret disiplini | Tarama katmanları | Threat modeling, compliance |
+
+Kendine dürüst işaret koy: her satırda hangi kolondasın? Zayıf satır, **bir sonraki 3 aylık hedefin**dir — reponun ilgili seviyesine geri dön, lab'ları tekrar çalış.
+
+## Sık mülakat soruları ve cevap iskeletleri
+
+### 1. “CI/CD pipeline'ını nasıl tasarlarsın?”
+
+İskelet: **kalite kapıları** (lint→test→scan→build) → **artifact tek üretim** (imaj, sha tag) → **ortam katmanları** (staging otomatik, prod onaylı/canary) → **gölge konular** (cache, secrets, rollback). Capstone akışını anlat — kendi kurdugun sistemin hikâyesi, ezberden bin kat güçlüdür.
+
+### 2. “Bir deployment sonrası hata oranına %20 arttı. Ne yaparsın?”
+
+İskelet: **mitigate-first** (rollback/flag — etkilenen müşteri süresini kısalt) → **ölçümle doğrula** (canary %'si, error rate metrikleri) → **kök neden** (trace + log) → **postmortem + aksiyon** (tekrarı kapat). Sıralama önemli: önce etkiyi kes.
+
+### 3. “Error budget nedir, neden %100 hedeflenmez?”
+
+İskelet: SLO %99.5 → bütçe = izin verilen başarısızlık → risk sermayesi → tükendiğinde feature durur, reliability işi önceliklenir → %100 hedefi geliştirmeyi felç eder ve kullanıcıya duyulmaz fark üretir.
+
+### 4. “GitOps nedir, push modelinden farkı?”
+
+İskelet: Git = istenen hâl → operator (ArgoCD/Flux) sürekli eşitler → drift detection → **pull güvenliği** (kümeye dış yazma kimliği yok) → audit/rollback = git log/revert.
+
+### 5. “Container içindeki süreç neden PID 1 özel?”
+
+İskelet: container'ın ana süreci (ENTRYPOINT) PID 1 — ölürse container ölür → signal handling önemi (SIGTERM'e düzgün yanıt = graceful shutdown) → zombie süreç sorumluluğu → health check entegrasyonu.
+
+### 6. “Sistem yavaşladı, nereden başlarsın?”
+
+İskelet: kullanıcı perspektifinden daralt (Seviye 1 diagnoz akışı) → metriklerle lokasyon (p99 hangi serviste — trace) → kaynak doygunluğu (CPU/mem/IO/net) → son kod değişikliği (`git log`) → kök neden + ölçümle doğrulama.
+
+<Callout type="tip" title="Cevap formülü">
+  Her soruda: (1) kısa tanım → (2) neden önemli → (3) kendi deneyiminden somut örnek
+  → (4) trade-off’lar. “Trade-off” kelimesi senior sinyalidir: her kararı bir bedeliyle
+  anlatmak, ezberi taklitten ayıran çizgidir.
+</Callout>
+
+## Yolculuktan sonraki yollar
+
+Bu reponun 5 seviyesi = sağlam **mid-level DevOps zemini**. Büyüme yolları:
+
+1. **Derinleşme:** Kubernetes (CKA/CKAD sertifikaları), cloud sertifikaları (AWS SA/Azure dev), security (CKS)
+2. **Genişleme:** veritabanı operasyonları, message broker'lar (Kafka/RabbitMQ), service mesh (Istio)
+3. **Platform yolu:** Backstage, IDP tasarımı, DX ölçümleri (Seviye 5 platform dersi)
+4. **SRE yolu:** Google SRE kitapları (ücretsiz!), SLO programı kurma, incident komutanlığı pratiği
+5. **Topluluk:** açık kaynak katkısı (dokümantasyon iyi başlangıç), kendi araçlarını yayınlama — bu repo gibi!
+
+## Son söz
+
+DevOps'un özeti üç cümlede:
+
+- **Kültür:** sen yaz, sen çalıştır; hatayı saklama, sistemden öğren.
+- **Pratik:** küçük parçalar, otomatik kapılar, ölçülebilir güvenilirlik.
+- **Araç:** konuya hizmet eder — “araç kültürü çözmez.”
+
+Bu repo boyunca tek bir projeyi (bu sitenin kendisini) seviye seviye üretimsel olgunluğa taşıdın. Bundan sonrası: **kendi projelerinde tekrarla.** İyi yolculuklar! 🚀
+
+<Flashcards
+  id="s5-skill-flash"
+  cards={[
+    { front: 'Mitigate-first', back: 'Olayda önce müşteri etkisini kes (rollback/flag), kök neden sonra. Kullanıcı süresi en pahalı kaynak.' },
+    { front: 'Error budget', back: 'SLO’nun izin verdiği başarısızlık payı; risk sermayesi. Tükenince feature deploy durur.' },
+    { front: 'Golden path', back: 'İyi pratiklerin tek komutla kullanılan standart yolu; dayatma değil davet — adoption ile ölçülür.' },
+    { front: 'Defense in depth', back: 'Katmanlı savunma: tek hatanın ölümcül olmaması için her katmanda bir kontrol (secret scan, rotasyon, least privilege...).' },
+    { front: 'DORA metrikleri', back: 'Deployment frequency, lead time, change failure rate, recovery time — teslim performansının 4 ölçüsü.' },
+  ]}
+/>
+
+<Quiz
+  id="s5-skill-matrisi"
+  questions={[
+    {
+      q: '“Deployment sonrası hata arttı” sorusunda ilk hamle neden rollback/flag olmalı?',
+      options: [
+        'Kök nedeni gizlemek için',
+        'Mitigate-first: etkilenen müşteri süresini kısaltmak; kök neden analizi olay sonrası gelir',
+        'CI’yı hızlandırmak için',
+        'SLO raporu için',
+      ],
+      answer: 1,
+      explain:
+        'Etki süresi en pahalı bedeldir; kök neden bulmak etkideyken yapılırsa müşteri süresi uzar. Önce kes, sonra anla.',
+    },
+    {
+      q: 'Mülakat cevaplarında “trade-off” anlatmanın sinyal değeri?',
+      options: [
+        'Belirsizlik gösterir',
+        'Kararların bedelini bilen, ezber değil deneyim sahibi olduğunu gösterir',
+        'Sorun kaçırma',
+        'Gereksiz detay',
+      ],
+      answer: 1,
+      explain:
+        'Her mühendislik kararı bir bedelle gelir; bedeli anlatan aday, kararı yaşayarak öğrenmiş demektir.',
+    },
+    {
+      q: 'Beceri matrisinde zayıf satırla yapılacak en mantıklı aksiyon?',
+      options: [
+        'Satırı görmezden gelmek',
+        '3 aylık hedefe çevirip ilgili seviyenin lab’larını tekrar uygulamak',
+        'Sadece video izlemek',
+        'Ekip değiştirmek',
+      ],
+      answer: 1,
+      explain:
+        'Beceriler uygulanarak büyür: zayıf alan = planlı tekrar (lab + kendi projede kullanım).',
+    },
+    {
+      q: 'Bu reponun “dogfooding” yaklaşımının mülakattaki karşılığı?',
+      options: [
+        'Ezberlenmiş tanımlar',
+        'Kendi kurduğun sistemin hikâyesini somut adımlar ve ölçümlerle anlatabilmek',
+        'Sertifika listesi',
+        'Yüksek maaş beklentisi',
+      ],
+      answer: 1,
+      explain:
+        'Kendi kurduğun capstone (ölçülmüş rollback, SLO alarmı prova edilmiş) en güçlü cevap malzemesidir.',
+    },
+  ]}
+/>

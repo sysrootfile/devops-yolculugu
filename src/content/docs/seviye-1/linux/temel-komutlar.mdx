@@ -1,0 +1,202 @@
+---
+title: 'Terminal Komutları: Sağlam Temel'
+description: 'ls, cd, cp, grep, pipe’lar ve terminalde düşünme alışkanlığı — önce web terminalinde dene, sonra kendi makinende uygula.'
+level: 1
+module: 'linux'
+order: 2
+duration: 25
+objectives:
+  - 'Gezinme ve dosya yönetimi komutlarını akıcı kullanmak'
+  - 'Pipe (|) ile komutları zincirleyebilmek'
+  - 'grep/find ile sistemde arama yapabilmek'
+prerequisites:
+  - 'seviye-1/linux/neden-linux'
+tags: ['linux', 'terminal', 'bash']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Terminal neden DevOps’un ana aracı?
+
+Sunuculara genellikle **SSH ile bağlanırsın** — grafik arayüz yok. Betikler (scripts) yazarsın — terminal komutları bunların yapı taşları. CI pipeline’ları da aslında terminal komutları çalıştırır. Yani terminali akıcı kullanmak, DevOps’un “okuma yazma” becerisidir.
+
+## Gezinme ve dosya yönetimi
+
+| Komut | Yapar | Örnek |
+| --- | --- | --- |
+| `pwd` | Bulunduğun dizini yazar | `pwd` |
+| `ls` | Listeler | `ls -la` (gizli dosyalar + detay) |
+| `cd` | Dizin değiştirir | `cd /var/log`, `cd ..` |
+| `mkdir` | Dizin oluşturur | `mkdir -p app/logs` |
+| `touch` | Boş dosya oluşturur | `touch not.txt` |
+| `cp` / `mv` | Kopyalar / taşır-yeniden adlandırır | `mv eski.txt yeni.txt` |
+| `rm` | Siler | `rm -r klasor/` (dikkat!) |
+| `cat` / `less` | Dosya içeriği | `cat /etc/hostname` |
+
+<Callout type="danger" title="Altın kural">
+  `rm` için geri dönüşüm kutusu yoktur. `rm -rf` kullanacaksan komutu çalıştırmadan
+  önce **yolu bir kez daha oku**. Özellikle `sudo` ile birleşince sistem-kirici güçte olur.
+</Callout>
+
+## Önce web terminalinde dene
+
+Aşağıdaki simülatör gerçek bir bash'in küçük bir kopyası. Amaç: komutları **serbestçe deneyip hatadan korkmadan** öğrenmek. Tüm komutları keşfetmeyi dene!
+
+<TerminalSim
+  id="s1-linux-temel-komutlar"
+  title="lab-ortami"
+  prompt="ogrenci@devops:~$"
+  welcome={[
+    'Linux terminal simülatörüne hoş geldin 👋',
+    'Amaç: 8 komutu keşfetmek. Denemekten çekinme — burada bozulacak bir şey yok.',
+    'Başlamak için: pwd',
+  ]}
+  hint="Bu sırayı dene: pwd → ls → ls -la → cd /var/log → cat /var/log/app.log → mkdir deneme → grep ERROR app.log → clear"
+  commands={{
+    'pwd': { out: ['/home/ogrenci'] },
+    'ls': { out: ['app.log  proje/  README.md  notlar.txt'] },
+    'ls -la': {
+      out: [
+        'total 20',
+        'drwxr-xr-x 3 ogrenci ogrenci 4096 Nov 12 10:00 .',
+        'drwxr-xr-x 3 root    root    4096 Nov 12 09:58 ..',
+        '-rw-r--r-- 1 ogrenci ogrenci  220 Nov 12 09:59 app.log',
+        '-rw-r--r-- 1 ogrenci ogrenci   80 Nov 12 09:59 README.md',
+        '-rw-r--r-- 1 ogrenci ogrenci   12 Nov 12 09:59 notlar.txt',
+        'drwxr-xr-x 2 ogrenci ogrenci 4096 Nov 12 09:59 proje',
+      ],
+    },
+    'cd /var/log': { out: ['/var/log dizinine geçildi'] },
+    'cat /var/log/app.log': {
+      out: [
+        '2026-11-12 09:00:01 INFO  servis basladi',
+        '2026-11-12 09:00:03 INFO  db baglantisi kuruldu',
+        '2026-11-12 09:14:22 ERROR odeme servisi timeout',
+        '2026-11-12 09:14:23 WARN  retry denemesi 1',
+        '2026-11-12 09:14:25 ERROR odeme servisi timeout',
+        '2026-11-12 09:15:00 INFO  servis iyilesti',
+      ],
+    },
+    'grep ERROR app.log': {
+      out: [
+        '2026-11-12 09:14:22 ERROR odeme servisi timeout',
+        '2026-11-12 09:14:25 ERROR odeme servisi timeout',
+      ],
+    },
+    'mkdir deneme': { out: ['(deneme dizini oluşturuldu — ls ile kontrol et)'] },
+    'clear': { out: ['(ekran temizlendi)'] },
+  }}
+/>
+
+Simülatörde dikkat et: `grep ERROR app.log` tek bir komut ama aslında **filtreleme** yapıyor. Şimdi gerçek araçları öğrenelim.
+
+## Pipe: komutları zincirleme
+
+Unix felsefesi: *her araç tek işi iyi yapsın, araçlar birleşsin.* Pipe (`|`) bir komutun çıktısını diğerinin girdisine bağlar:
+
+```bash
+# app.log içindeki ERROR satırlarını bul, kaç tane olduğunu say
+grep ERROR app.log | wc -l
+
+# En çok bellek kullanan 3 süreci listele
+ps aux | sort -k4 -rn | head -3
+
+# journaldaki nginx loglarında "500" geçen satırların son 5'i
+journalctl -u nginx | grep 500 | tail -5
+```
+
+Okuma alışkanlığı: soldan sağa, çıktı→girdi. `grep ... | wc -l` = “ele, sonra say.”
+
+## Arama: find ve grep farkı
+
+- **`find`** → **dosya/dizin** arar (isim, boyut, tarih)
+- **`grep`** → **dosyanın içindeki** metni arar
+
+```bash
+# Adı "conf" içeren dosyaları /etc altında ara
+find /etc -name "*conf*" 2>/dev/null
+
+# 10MB'tan büyük dosyaları bul
+find / -size +10M 2>/dev/null
+
+# src klasöründe "TODO" geçen satırlar (dosya adlarıyla)
+grep -rn "TODO" src/
+```
+
+`2>/dev/null` = hata mesajlarını (izin verilmedi dizinleri) bastır. `grep -r` rekürsif, `-n` satır numarası.
+
+## Diğer günlük silahlar
+
+```bash
+chmod +x deploy.sh        # script'e çalıştırma izni ver (bir sonraki derste derinleşecek)
+history | tail -20        # son komutların
+df -h                     # disk kullanımı
+free -h                   # bellek
+top                       # canlı süreç/bellek paneli (çıkış: q)
+which python3             # bir komutun hangi dosyada olduğu
+man grep                  # el kitabı (çıkış: q) — okumak uzun, işe yarar
+```
+
+<LabBox
+  id="s1-linux-temel-komutlar-lab"
+  title="Kendi terminalinde 10 dakika"
+  verify={['pwd', 'ls -la | wc -l', 'grep -rn "TODO" ~/proje/ 2>/dev/null || echo "TODO yok, temiz"']}
+>
+  Kendi ortamında (WSL2/VM/bulut VM) şunları uygula:
+
+  1. Ev dizininde `devops-gunluk/` klasörü oluştur, içine `gunluk.md` dosyası aç.
+  2. `gunluk.md` içine birkaç satır yaz (bir satırda `TODO:` kelimesi olsun).
+  3. `grep -n TODO` ile o satırı bul.
+  4. `history | tail -5` ile yaptıklarını gör — ileride script haline getireceğiz.
+
+  Doğrulama komutlarından ilki dizinini göstermeli, ikincisi dosya sayısını saymalı.
+</LabBox>
+
+<Quiz
+  id="s1-linux-temel-komutlar"
+  questions={[
+    {
+      q: '`grep ERROR app.log | wc -l` komutu ne yapar?',
+      options: [
+        'app.log dosyasını siler',
+        'ERROR içeren satırların sayısını verir',
+        'app.log içindeki tüm satırları sayar',
+        'ERROR kelimesini app.log’tan siler',
+      ],
+      answer: 1,
+      explain: 'grep filtreler, wc -l sayar. Pipe, birincinin çıktısını ikincisine girdi yapar.',
+    },
+    {
+      q: '“nginx.conf” adlı bir dosyayı diskte aramak için en uygun komut?',
+      options: ['grep nginx.conf', 'find / -name "nginx.conf"', 'ls nginx.conf', 'cat nginx.conf'],
+      answer: 1,
+      explain:
+        'find dosya/dizin arar; grep dosyanın içeriğinde arar. Dosya adı aramak = find.',
+    },
+    {
+      q: '`ps aux | sort -k4 -rn | head -3` zincirinde head -3 ne yapar?',
+      options: [
+        'İlk 3 kolonu gösterir',
+        'Sonucun ilk 3 satırını gösterir',
+        'İlk 3 dosyayı siler',
+        '3 saniye bekler',
+      ],
+      answer: 1,
+      explain: 'head -N, girdinin ilk N satırını alır; zincirin sonunda “en iyi 3” listesi elde edilir.',
+    },
+    {
+      q: '`rm -rf` kullanırken temel güvenlik refleksi nedir?',
+      options: [
+        'Hızlı yazmak ki işlem erken bitsin',
+        'Hedef yolu çalıştırmadan önce iki kez okumak',
+        'Her zaman sudo ile çalıştırmak',
+        'Log seviyesini artırmak',
+      ],
+      answer: 1,
+      explain: 'rm için geri dönüş yoktur; özellikle -f (onaysız) ve -r (rekürsif) birleşimi tehlikelidir.',
+    },
+  ]}
+/>

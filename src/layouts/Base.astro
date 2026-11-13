@@ -1,0 +1,82 @@
+---
+import '@styles/global.css';
+import { SITE } from '@consts';
+import ThemeToggle from '@components/ThemeToggle.astro';
+import Search from '@components/Search.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title, description = SITE.description } = Astro.props;
+const fullTitle = title ? `${title} · ${SITE.name}` : SITE.name;
+---
+
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    <script is:inline>
+      // Tema değişkenini boyamadan önce uygula (FOUV önlemi)
+      (() => {
+        const stored = localStorage.getItem('dy:theme');
+        const theme =
+          stored || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="/" class="brand"><span class="brand-mark">D</span>{SITE.name}</a>
+      <Search />
+      <ThemeToggle />
+    </header>
+
+    <slot />
+
+    <footer class="site-footer">
+      <p>
+        {SITE.name} — interaktif öğrenme reposu ·
+        <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> ile üretildi ·
+        <a href="https://github.com/features/actions" target="_blank" rel="noopener">GitHub Actions</a>
+        ile derleniyor
+      </p>
+    </footer>
+
+    <script>
+      // Kod bloklarına kopyala butonu ekle
+      function initCopyButtons() {
+        document.querySelectorAll('main .prose pre.astro-code').forEach((pre) => {
+          const parent = pre.parentElement;
+          if (parent && parent.classList.contains('code-wrap')) return;
+          const wrap = document.createElement('div');
+          wrap.className = 'code-wrap';
+          pre.replaceWith(wrap);
+          wrap.appendChild(pre);
+          const btn = document.createElement('button');
+          btn.className = 'code-copy';
+          btn.type = 'button';
+          btn.textContent = 'Kopyala';
+          btn.addEventListener('click', async () => {
+            try {
+              await navigator.clipboard.writeText(pre.textContent ?? '');
+              btn.textContent = 'Kopyalandı ✓';
+            } catch {
+              btn.textContent = 'Kopyalanamadı';
+            }
+            setTimeout(() => (btn.textContent = 'Kopyala'), 1600);
+          });
+          wrap.appendChild(btn);
+        });
+      }
+      initCopyButtons();
+    </script>
+  </body>
+</html>

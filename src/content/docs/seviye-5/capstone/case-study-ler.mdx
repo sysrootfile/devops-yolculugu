@@ -1,0 +1,132 @@
+---
+title: 'Gerçek Dünya Case Study’leri'
+description: 'Üç gerçek senaryo: “log diskini doldurdu”, “canary olmasa müşteri kaybı” ve “sızan token” — öğrendiğin her seviyenin sahada nasıl çalıştığı.'
+level: 5
+module: 'capstone'
+order: 2
+duration: 20
+objectives:
+  - 'Gerçekçi olay senaryolarını seviye seviye analiz edebilmek'
+  - 'Aynı problemi farklı olgunlukta ekiplerin nasıl çözdüğünü karşılaştırabilmek'
+  - 'Kendi karar ağacını bu senaryolarla kurabilmek'
+prerequisites:
+  - 'seviye-5/capstone/capstone-prod-yolculugu'
+tags: ['case study', 'sahne', 'pratik']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Senaryo 1: “Gece 2:47 — disk doldu”
+
+**Olay:** Log dosyası diskteki son MB'ları yedi. Uygulama, diske yazamadığı için stack trace'ler de yazamadı; sadece istekler sessizce hata verdi. Uyarı gece 3'te on-call'a geldi.
+
+**Juniorsız ekip çözer:** VM'e gir, log'u sil, servisi restart et. 2 saatlik düzeltme. Uyku bozuldu, sebep belirsiz.
+
+**Bu reponun öğrencisi çözer:**
+
+1. **Log seviyesi denetimi** (Seviye 1, süreçler/loglar): logrotation var mı? DEBUG production'da açık mı?
+2. **Metrik tarafı** (Seviye 4): disk kullanımına gauge alarm (%85'te uyar, %95'te kritik) — kesinti değil **erken** sinyal
+3. **Log rotasyonu altyapıda** (Seviye 3, IaC): journald limitleri + logrotate config Terraform/Ansible'da standart
+4. **Postmortem** (Seviye 4): kök neden “hata seli yüzünden log hacmi 10× arttı” → hata oranı alarmları arasında **bağımlılık** unutulmuş
+
+**Çıkarım:** Aynı olay, olgunluk farkıyla “gece kabusu”dan “15 dakikalık rutin”e iner. Çözüm zinciri seviyelerden geçer: Linux → monitoring → IaC → postmortem.
+
+## Senaryo 2: “Ödeme servisi güncellemesi ve %1”
+
+**Olay:** Ekip ödeme servisine büyük bir refactor deploy ediyor. Testler yeşil. Deploy anında **ödeme başarısı %98'den %94'e** düşer — kullanıcıların %6'sı ödeme yapamıyor. Kimse fark etmez çünkü: pano sadece ortalamaları gösteriyor, canary yok.
+
+**Bu reponun öğrencisi kurardı:**
+
+1. **Canary %5** (Seviye 5, deployment desenleri): refactor önce %5 trafik alır — %6 hata artışı canary metriklerinde **5 dakika içinde** görünür
+2. **SLO bazlı otomatik abort** (Seviye 4, SLO): payment SLO burn rate alarmı; canary otomatik kesilir
+3. **Feature flag** (Seviye 5): refactor flag arkasında — kill switch ile tek tık geri dönüş
+4. **Mitigate-first** (Seviye 4, incident): “kök nedeni bulana kadar açık kalsın” değil; flag kapalı, müşteri korundu, sonra analiz
+
+**Çıkarım:** “Testler yeşil” ≠ “production'da yeşil”. Desenler (canary/flag) riski **ölçülebilir dilimlere** böler; SLO, ölçümün ölçütünü verir.
+
+## Senaryo 3: “Slack'te paylaşılan token”
+
+**Olay:** Bir geliştirici hata ayıklarken bir production token'ını Slack kanalına yapıştırır. Üç hafta sonra bir güvenlik raporunda token'in hâlâ geçerli olduğu görülür.
+
+**Sızıntı zincirinde her katmanın payı:**
+
+1. **Secret disiplini** (Seviye 4, secret yönetimi): geçici/dinamik token kullanılmış olsaydı ömrü dakikalardı
+2. **Sızıntı taraması** (Seviye 4, supply chain): CI'daki secret scan, token deseni yakalar; Slack entegrasyonlu tarama araçları anında uyarır
+3. **Rotasyon politikası** (Seviye 4): 30 gün ömürlü token üç haftada **zaten ölürdü**
+4. **En az yetki** (Seviye 1→3): token'in yetkisi yalnızca tek Servis okuması olsaydı zarar tek sınırla çakışık olurdu
+5. **Olay kültürü** (Seviye 4, postmortem): “geliştiricinin hatası” değil “neden canlı token paylaşılabilecek bir akış vardı?” — süreç sorusu
+
+**Çıkarım:** Güvenlik olaylarının çoğu tek bir insan hatasından doğmaz; hatayı **ölümcül** katan katman eksikliğinden doğar. Katmanlı savunma (defense in depth) bu reponun seviyelerinin tam olarak bu mantığı.
+
+## Ortak ders: olgunluk merdiveni
+
+| Merdiven basamağı | Yansıması |
+| --- | --- |
+| 1. Elle çözüm | Kabusa uğraş, sebep bilinmez |
+| 2. Elle çözüm + log | Sebebi gör ama tekrar eder |
+| 3. Monitoring + alarm | Erken sinyal, hızlı müdahale |
+| 4. Desen + otomasyon | Olay oluşamaz (canary/flag/IaC) |
+| 5. Öğrenen sistem | Postmortem + chaos + SLO ile tekrar etmez |
+
+Bu reponun beş seviyesi tam olarak bu merdivendir. Herhangi bir senaryoyu aldığında kendine sor: *“Bu ekip merdivenin hangi basamağında? Bir üst basamağa çıkaracak tek şey ne?”* — bu soru, mülakat ve saha çalışmasında en değerli düşünme kalıbıdır.
+
+<Callout type="tip" title="Kendi senaryonu yaz">
+  Kendi projende (veya capstone kurulumunda) bilinçli bir arıza senaryosu tasarla,
+  olgunluk merdivenindeki konumunu not et, bir üst basamağa çık. Bu egzersiz
+  mülakatlardaki “bir olayı anlat” sorusunun en güçlü cevabını üretir.
+</Callout>
+
+<Quiz
+  id="s5-case-study"
+  questions={[
+    {
+      q: 'Senaryo 1’deki olayın (disk dolması) en erken yakalanma noktası neresi olmalıydı?',
+      options: [
+        'Kullanıcı şikâyeti',
+        'Disk kullanım gauge alarmı (%85 uyarı eşiği) — kesintiden önce',
+        'Gece on-call rüyası',
+        'Fatura raporu',
+      ],
+      answer: 1,
+      explain:
+        'Kaynak doygunluğu (saturation) golden sinyallerdendir; %85 uyarı eşiği olayı kesintiye çevirmeden görünür kılar.',
+    },
+    {
+      q: 'Senaryo 2’de “testler yeşildi ama prod’da bozuldu” dersinin özeti?',
+      options: [
+        'Testler yazılmamalı',
+        'Testler yalnızca statik doğrulama sağlar; gerçek trafikle canary + SLO ölçümü riski ölçülebilir dilimlere böler',
+        'Prod’a hiç deploy edilmez',
+        'Ortalama metrikler yeterli',
+      ],
+      answer: 1,
+      explain:
+        'Gerçek dünya değişkenidir; canary küçük dilimde gerçek tepkiyi ölçer, SLO ölçütü sağlar, flag hızlı çıkış verir.',
+    },
+    {
+      q: 'Senaryo 3’te token’in üç hafta sonra da geçerli olmasının kök çözümü?',
+      options: [
+        'Slack’i kaldırmak',
+        'Kısa ömürlü/dinamik secret + rotasyon politikası — uzun ömürlü canlı token kalmaması',
+        'Kişiyi işten çıkarmak',
+        'Repoyu gizlemek',
+      ],
+      answer: 1,
+      explain:
+        'İnsan hatası kaçınılmazdır; hatanın ölümcül olmaması tasarım gereğidir: kısa ömür + dar yetki + tarama.',
+    },
+    {
+      q: 'Olgunluk merdiveninin son basamağını (“öğrenen sistem”) tanımlayan döngü?',
+      options: [
+        'Daha fazla sunucu eklemek',
+        'Postmortem + aksiyon kapanması + chaos provası ile aynı olayın tekrarını sistemik olarak engellemek',
+        'Test sayısını artırmak',
+        'Ekip büyütmek',
+      ],
+      answer: 1,
+      explain:
+        'Öğrenen sistem, olaydan çıkan aksiyonu uygulayıp (chaos ile prova edip) aynı başarısızlık modunu kapatır.',
+    },
+  ]}
+/>

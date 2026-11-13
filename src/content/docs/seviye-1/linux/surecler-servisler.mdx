@@ -1,0 +1,177 @@
+---
+title: 'Süreçler, Servisler ve Loglar'
+description: 'ps/top/systemctl üçlüsü, systemd birimleri, journalctl ile log okuma — “servis çalışmıyor” problemini çözmek.'
+level: 1
+module: 'linux'
+order: 4
+duration: 20
+objectives:
+  - 'Süreçleri listeyip problemli olanı tespit edebilmek'
+  - 'systemctl ile servis yönetebilmek (start/stop/enable/status)'
+  - 'journalctl ile servis loglarını okuyabilmek'
+prerequisites:
+  - 'seviye-1/linux/temel-komutlar'
+tags: ['linux', 'systemd', 'log']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import TerminalSim from '@components/TerminalSim.astro';
+
+## Süreç: çalışan her şey
+
+Program diskte **dosya**dır; çalışmaya başladığında **süreç (process)** olur ve bir PID (process ID) alır. DevOps’un “sunucuda ne oluyor?” sorusunun ilk cevabı süreç listesidir:
+
+```bash
+ps aux                    # tüm süreçler
+ps aux | grep nginx       # nginx süreçlerini filtrele
+top                       # canlı görünüm (çıkış: q)
+kill 1234                 # 1234 numaralı süreci nazikçe bitir (SIGTERM)
+kill -9 1234              # zorla bitir (SIGKILL — son çare)
+```
+
+`ps aux` çıktısında bakılacak kolonlar: **%CPU, %MEM** (kaynak tüketimi) ve **STAT** (R=çalışıyor, S=uyuyor, Z=zombi).
+
+## systemd: sunucunun orkestra şefi
+
+Modern Linux dağıtımlarında servisleri **systemd** yönetir. Her servis bir “unit” dosyasıdır (`/etc/systemd/system/*.service`). DevOps için bilmen gereken komut seti şunlar:
+
+```bash
+sudo systemctl start nginx      # başlat
+sudo systemctl stop nginx       # durdur
+sudo systemctl restart nginx    # yeniden başlat
+sudo systemctl status nginx     # durum + son loglar
+sudo systemctl enable nginx     # açılışta otomatik başlasın
+sudo systemctl disable nginx    # otomatik başlatmayı kapat
+systemctl list-units --type=service --state=running   # çalışan servisler
+```
+
+`enable` ile `start` farkı klasik sorudur: **start** şimdi başlatır, **enable** reboot sonrası de başlatır. Production'da ikisi de istenir.
+
+## Loglar: olaydan sonra gerçeği söyleyen tek şey
+
+systemd'nin log servisi **journald**, tüm servis loglarını ikili formatta tutar:
+
+```bash
+journalctl -u nginx               # nginx servis logları
+journalctl -u nginx -f            # canlı takip (tail -f gibi; çıkış: Ctrl+C)
+journalctl -u nginx --since "1 hour ago"
+journalctl -p err -b              # bu açılıştan beri hata seviyesindekiler
+journalctl --disk-usage           # logların ne kadar yer tuttuğu
+```
+
+Klasik olmayan (kendi dosyasına yazan) uygulamalar için:
+
+```bash
+tail -f /var/log/app/app.log      # dosya logunu canlı izle
+tail -100 /var/log/syslog         # son 100 satır
+```
+
+<Callout type="tip" title="Sorun giderme akışı (ezberele)">
+  1) `systemctl status <servis>` → 2) çalışmıyorsa `journalctl -u <servis> -n 50` →
+  3) hata satırını oku → 4) yapılandırma mı, kaynak mı (bellek/disk/port), bağımlılık mı?
+  Bu akış, karşılaşacağın olayların %80’ini çözer.
+</Callout>
+
+## Web terminalinde servis troubleshooting
+
+<TerminalSim
+  id="s1-linux-servisler"
+  title="sunucu-01"
+  prompt="ogrenci@sunucu:~$"
+  welcome={[
+    'Bir web sunucusuna bağlandın. Rapor: “site açılmıyor”.',
+    'Görevin: nginx neden çalışmıyor, bul ve başlat!',
+    'İpucu: systemctl status nginx ile başla.',
+  ]}
+  hint="systemctl status nginx → journalctl -u nginx → sudo systemctl start nginx"
+  commands={{
+    'systemctl status nginx': {
+      out: [
+        '● nginx.service - A high performance web server',
+        '   Active: inactive (dead) since Nov 12 09:41',
+        '  Process: 1182 ExecStartPre=/usr/sbin/nginx -t (code=exited, status=0/SUCCESS)',
+        '!servis ÇALIŞMIYOR. Loglara bak: journalctl -u nginx',
+      ],
+    },
+    'journalctl -u nginx': {
+      out: [
+        'Nov 12 09:41:02 sunucu nginx[1182]: [emerg] bind() to 0.0.0.0:80 failed (98: Address already in use)',
+        'Nov 12 09:41:02 sunucu nginx[1182]: nginx configuration failed',
+        '~port 80 meşgul görünüyor — kim kullanıyor? (ps aux | grep node)',
+      ],
+    },
+    'ps aux | grep node': {
+      out: [
+        'root  1290  3.1  2.4 918400 48212 ?  Sl 09:00  0:42 node /opt/test-app/server.js',
+        '!test-app süreci 80 portunu işgal etmiş görünüyor.',
+      ],
+    },
+    'kill 1290': { out: ['(süreç sonlandırıldı — artık portu boşalt)'] },
+    'sudo systemctl start nginx': { out: ['+servis başlatıldı! systemctl status ile doğrula.'] },
+    'systemctl status nginx': {
+      out: [
+        '● nginx.service - A high performance web server',
+        '   Active: active (running) since Nov 12 10:05',
+        '+🎉 Olay çözüldü: port çakışması tespit edildi, süreç sonlandırıldı, servis ayağa kalktı.',
+      ],
+    },
+  }}
+/>
+
+Bu mini senaryo gerçek bir **incident** akışını modelledi: semptom → status → log → kök neden (port çakışması) → aksiyon → doğrulama. Seviye 4’te bu akışı SRE disipliniyle (incident management) formalize edeceğiz.
+
+## Süreç yönetiminin DevOps bağlantısı
+
+- **Monitoring** (Seviye 4) aslında `ps`/`top`un sürekli ve otomatik halidir.
+- **Container'lar** süreç yönetimini değiştirir: her container tek ana süreçle çalışır; PID 1 container'ın yaşamıdır.
+- **systemd unit dosyası** yazmak, kendi uygulamanı “sunucu servisi” yapmanın klasik yoludur — IaC (Seviye 3) bu tanımları kodlaştırır.
+
+<Quiz
+  id="s1-linux-servisler"
+  questions={[
+    {
+      q: '`systemctl enable nginx` ne yapar?',
+      options: [
+        'nginx’i hemen başlatır',
+        'nginx’i sistem açılışında otomatik başlatılacak şekilde işaretler',
+        'nginx’i günceller',
+        'nginx loglarını açar',
+      ],
+      answer: 1,
+      explain:
+        'enable kalıcıdır (reboot sonrası da çalışır); anında başlatmak için start gerekir. İkisi birbirinin alternatifi değil, tamamlayıcısıdır.',
+    },
+    {
+      q: 'Bir servis başlamıyorsa ilk bakılacak yer hangisi olmalı?',
+      options: [
+        'journalctl -u <servis>',
+        'Sunucuyu yeniden başlatmak',
+        'Uygulamayı yeniden yazmak',
+        'DNS ayarları',
+      ],
+      answer: 0,
+      explain:
+        'Servise özel loglar en hızlı kök neden ipucunu verir; reboot kök nedeni gizler.',
+    },
+    {
+      q: '`kill -9` neden “son çare”dir?',
+      options: [
+        'Çok fazla CPU harcar',
+        'Sürece temiz kapanma (shutdown) şansı vermez, veri kaybına yol açabilir',
+        'Yalnızca root kullanabilir',
+        'Log üretmez',
+      ],
+      answer: 1,
+      explain:
+        'SIGKILL süreci anında öldürür; dosya flush’ları ve temiz kapanma adımları atlanır. Önce normal kill (SIGTERM) denemelidir.',
+    },
+    {
+      q: 'Simülasyondaki olayın kök nedeni neydi?',
+      options: ['Disk dolu', 'Yanlış yapılandırma', 'Port 80 çakışması', 'Bellek yetersizliği'],
+      answer: 2,
+      explain:
+        'Loglardaki “Address already in use” ipucu, test-app sürecinin 80 portunu işgal ettiğini gösterdi.',
+    },
+  ]}
+/>

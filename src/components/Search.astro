@@ -1,0 +1,92 @@
+---
+import { getAllDocs, sortLessons, toVM } from '@lib/content';
+
+// Build zamanında üretilen arama indeksi — istemciye gömülür.
+const docs = await getAllDocs();
+const index = sortLessons(docs).map((d) => {
+  const vm = toVM(d);
+  return { t: vm.title, d: vm.description, u: vm.url, l: vm.level };
+});
+
+// JSON içinde olası bir </script> dizisini güvenle kaçır.
+const safeJson = JSON.stringify(index).replaceAll('<', '\\u003c');
+---
+
+<div class="header-search">
+  <span class="search-icon" aria-hidden="true">🔍</span>
+  <input
+    type="search"
+    placeholder="Ders ara…  (Ctrl+K)"
+    aria-label="Derslerde ara"
+    autocomplete="off"
+  />
+  <div class="search-results" role="listbox" hidden></div>
+</div>
+
+<script type="application/json" id="dy-search-index" set:html={safeJson} />
+
+<script>
+  const LEVEL_NAMES = [
+    'Seviye 0',
+    'Seviye 1 · Temeller',
+    'Seviye 2 · CI/CD',
+    'Seviye 3 · Konteyner & Bulut',
+    'Seviye 4 · Operasyon',
+    'Seviye 5 · Ustalık',
+  ];
+
+  type Item = { t: string; d: string; u: string; l: number };
+
+  const box = document.querySelector<HTMLElement>('.header-search')!;
+  const input = box.querySelector<HTMLInputElement>('input')!;
+  const panel = box.querySelector<HTMLElement>('.search-results')!;
+  const raw = document.getElementById('dy-search-index')?.textContent ?? '[]';
+  const index: Item[] = JSON.parse(raw);
+
+  function render() {
+    const q = input.value.trim().toLocaleLowerCase('tr-TR');
+    if (q.length < 2) {
+      panel.hidden = true;
+      panel.innerHTML = '';
+      return;
+    }
+    const hits = index
+      .filter((it) => (it.t + ' ' + it.d).toLocaleLowerCase('tr-TR').includes(q))
+      .slice(0, 8);
+    if (hits.length === 0) {
+      panel.innerHTML = '<div class="search-empty">Sonuç bulunamadı 🤷</div>';
+    } else {
+      panel.innerHTML = hits
+        .map(
+          (it) =>
+            `<a href="${it.u}"><span class="sr-title">${it.t}</span>` +
+            `<span class="sr-meta">${LEVEL_NAMES[it.l] ?? 'Seviye ' + it.l} · ${it.d}</span></a>`
+        )
+        .join('');
+    }
+    panel.hidden = false;
+  }
+
+  input.addEventListener('input', render);
+  input.addEventListener('focus', render);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      input.value = '';
+      render();
+      input.blur();
+    }
+    if (e.key === 'Enter') {
+      const first = panel.querySelector('a');
+      if (first) first.click();
+    }
+  });
+  document.addEventListener('click', (e) => {
+    if (!box.contains(e.target as Node)) panel.hidden = true;
+  });
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      input.focus();
+    }
+  });
+</script>

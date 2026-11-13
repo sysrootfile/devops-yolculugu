@@ -1,0 +1,164 @@
+---
+title: 'LAB: Bu Siteyi Uptime İzlemeye Alma'
+description: 'Seviye 1’de yazdığın sağlık kontrol scriptini “gerçek” monitoring’e yükselt: blackbox exporter, uptime alarmı ve incident prova senaryosu.'
+level: 4
+module: 'observability'
+order: 3
+duration: 20
+objectives:
+  - 'Blackbox exporter ile dışarıdan uptime ölçümü kurabilmek'
+  - 'Uptime alarmı tasarlayabilmek'
+  - 'Bilinçli bir kesintiyi prova edip alarm akışını izleyebilmek'
+prerequisites:
+  - 'seviye-4/observability/prometheus-grafana'
+tags: ['lab', 'uptime', 'monitoring']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
+
+## Blackbox: dışarıdan bakış
+
+Servislerin *içinden* gelen metrikler (seviye 4 dersi 2) “süreç canlı mı?” der; ama kullanıcı sorusu farklı: **“siteden dışarıdan erişilebiliyor mu?”** DNS mi, TLS mi, CDN mi? Bunun aracı **blackbox exporter** — Prometheus'a “bu URL'leri dışarıdan probe et” dedirtir:
+
+```yaml
+# monitoring/prometheus.yml'ye ekle
+scrape_configs:
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]           # “HTTP 200 bekliyoruz” tanımı
+    static_configs:
+      - targets:
+          - http://site:80          # iç hedef
+          - https://ornek.com       # gerçek prod hedefi
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115   # probe işi exporter'da
+```
+
+Elde edilen metrikler:
+
+```
+probe_success{instance="https://ornek.com"}  1   # 1=çalışıyor 0=düştü
+probe_duration_seconds{...}                    0.243
+probe_http_status_code{...}                    200
+```
+
+## Alarm: uptime ihlali
+
+```yaml
+- alert: SiteDown
+  expr: probe_success == 0
+  for: 2m
+  labels: { severity: critical }
+  annotations:
+    summary: "SİTE DÜŞTÜ: {{ $labels.instance }}"
+    runbook: "https://wiki/runbooks/sitedown"
+```
+
+Üç tamamlayıcı alarm: `SiteDown` (probe 0), `SlowSite` (probe_duration > 2s, for 10m) ve `WrongContent` (beklenen içerik doğrulaması — blackbox'ın fail_if_not_matches_regexp modülü).
+
+<Callout type="tip" title="Runbook bağlantısı klasiktir">
+  Alarm annotations’ına runbook (olay çözüm kılavuzu) bağlamak, gece 3’teki on-call
+  mühendise “ne yapacağını” beklemeden verir. Seviye 4 SRE dersinde runbook’ları
+  incident akışının parçası olarak yine göreceksin.
+</Callout>
+
+## Prova: bilinçli kesinti
+
+İzleme kurulduktan sonra yapılacak en değerli iş **test etmektir**:
+
+```bash
+docker compose stop site       # siteyi kapat
+# → Prometheus UI'da probe_success → 0
+# → 2 dakika sonra SiteDown alarmı FIRING
+docker compose start site      # düzel
+# → alarm RESOLVED
+```
+
+Bu prova üç şeyi doğrular: (1) zincir çalışıyor (2) alarm eşikleri mantıklı (3) bildirim doğru kişiye gidiyor. Seviye 4'ün SRE modülünde bu provayı “chaos engineering” adıyla tekrar derinleştireceğiz.
+
+<Mermaid
+  chart={`flowchart LR
+    S["docker stop site"] --> P["probe_success = 0"]
+    P -->|"for: 2m"| A["ALERT FIRING<br/>SiteDown"]
+    A --> AM["Alertmanager<br/>mail/Slack"]
+    S2["docker start site"] --> P2["probe_success = 1"]
+    P2 --> R["ALERT RESOLVED"]
+    A -.-> R`}
+  caption="İzleme zincirinin prova akışı — kurup çalıştırmadığın monitoring, kurulmamış monitoringdir."
+/>
+
+<LabBox
+  id="s4-uptime-lab"
+  title="İzleme zincirini prova et"
+  verify={['docker compose ps | grep blackbox', 'curl -s "localhost:9090/api/v1/query?query=probe_success" | head -c 200']}
+>
+  1. Compose'a `blackbox` (prom/blackbox-exporter) servisini ekle.
+  2. Prometheus config'ine yukarıdaki probe job'ını ekle → `docker compose restart prometheus`.
+  3. Prometheus UI → Targets: blackbox job UP olmalı.
+  4. Grafana'da `probe_success` ve `probe_duration_seconds` pane'leri kur.
+  5. Alert kuralını yükle → `docker compose stop site` → FIRING'i izle → start ile RESOLVED.
+  6. Provayı not et: alarm ne kadar sürede tetiklendi? Kaç kişiye bildirdi? (Bu sayılar incident yönetiminin malzemesi.)
+</LabBox>
+
+<Quiz
+  id="s4-uptime-lab"
+  questions={[
+    {
+      q: 'Blackbox exporter, uygulamanın kendi metriklerinden hangi açıdan farklıdır?',
+      options: [
+        'Daha hızlıdır',
+        'Dışarıdan, kullanıcı perspektifinden (DNS/TLS/HTTP uçtan uca) ölçer',
+        'Log toplar',
+        'Trace üretir',
+      ],
+      answer: 1,
+      explain:
+        'İç metrik “süreç canlı” der; blackbox “kullanıcı siteye erişebiliyor” der — DNS, CDN, TLS dahil zincirin tamamı.',
+    },
+    {
+      q: 'probe_success == 0 alarminde `for: 2m` kullanımı neyi önler?',
+      options: [
+        'CPU yükünü',
+        'Tek seferlik ağ kesintilerinden gelen yanlış (false positive) alarmları',
+        'Log birikimini',
+        'CDN cache süresini',
+      ],
+      answer: 1,
+      explain:
+        'Kısa sarsıntılar normaldir; 2 dakikalık kalıcı kesinti gerçek olaydır. Eşik + süre = flaky alarm azaltma.',
+    },
+    {
+      q: 'Monitoring kurulumunu “prova” ile test etmenin değeri?',
+      options: [
+        'Dokümantasyon için',
+        'Zincirin (metrik→kural→alarm→bildirim) gerçekten çalıştığını ve eşiklerin mantıklı olduğunu kanıtlamak',
+        'Prometheus lisansı için',
+        'Grafana theme testi',
+      ],
+      answer: 1,
+      explain:
+        'Kurulup prova edilmeyen monitoring, olay anında ilk defa denenmiş olur — en kötü test zamanı o andır.',
+    },
+    {
+      q: 'Alarm annotations’ında runbook bağlantısının amacı?',
+      options: [
+        'Estetik',
+        'On-call’ın olay anında “ne yapacağını” anında bulması',
+        'Grafana gereği',
+        'SLA raporu',
+      ],
+      answer: 1,
+      explain:
+        'Runbook = olay için önceden yazılmış çözüm kılavuzu; alarmın yanında olması MTTR’yi (düzeltme süresi) kısaltır.',
+    },
+  ]}
+/>
