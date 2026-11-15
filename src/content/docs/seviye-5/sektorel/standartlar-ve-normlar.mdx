@@ -1,0 +1,160 @@
+---
+title: 'Sektör Normları ve Standartlar: ISO’dan ITIL’e'
+description: 'Regülasyon–standart–norm üçlüsü; ISO 27001, SOC 2, NIST CSF, CIS Benchmarks ve ITIL 4’ün DevOps ile barışı — sektör sektör beklenti matrisi.'
+level: 5
+module: 'sektorel'
+order: 2
+duration: 22
+objectives:
+  - 'Regülasyon, standart ve norm kavramlarını ayırt edebilmek'
+  - 'ISO 27001, SOC 2 ve NIST CSF’ün DevOps pratiklerine karşılıklarını kurabilmek'
+  - 'ITIL 4 değişim tiplerini CI/CD akışlarıyla bağlayabilmek'
+  - 'Sektör bazlı norm beklentilerini bir matris üzerinden okuyabilmek'
+prerequisites:
+  - 'seviye-5/sektorel/regule-sektorler'
+tags: ['standartlar', 'iso', 'itil', 'sektör', 'uyumluluk']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Üç kelime, üç farklı güç düzeyi
+
+Bu dersin dilini önce sabitleyelim — karıştırıldıklarında sahte tartışmalar doğar:
+
+| Kavram | Gücü | Örnek |
+| --- | --- | --- |
+| **Regülasyon** | Yasal zorunluluk — ihlali ceza | KVKK/GDPR, SOX, PCI-DSS (kart markaları aracılığıyla) |
+| **Standart** | Gönüllü çerçeve — ama pazarın fiili şartı | ISO 27001, SOC 2, NIST CSF, CIS Benchmarks |
+| **Norm** | Sektörel beklenti — yazılı olmayabilir | “SaaS satın alınırken SOC 2 raporu istenir”, deploy’da ticket açılması |
+
+Pratik sonuç: **standartları atlamak regülasyon cezası getirmez — müşteri kaybettirir.** B2B SaaS dünyasında “SOC 2 raporun var mı?” sorusu, satış sürecinin kapısıdır.
+
+## Evrensel standartlar ve DevOps karşılıkları
+
+| Standart | Ne söyler? | DevOps karşılığı (bu repodan) |
+| --- | --- | --- |
+| **ISO 27001** | Bilgi güvenliği yönetim sistemi (ISMS); 2022 revizyonuyla Annex A kontrolleri | Erişim politikası = IAM/en az yetki; varlık envanteri = SBOM/IaC; olay prosedürü = incident akışı |
+| **SOC 2** (Type I / Type II) | Güven servis kriterleri (güvenlik, erişilebilirlik, gizlilik...); Type I tasarımın o anki doğruluğu, **Type II** bir dönem boyunca işleyişin kanıtı | Sürekli kanıt: deploy logları, erişim kayıtları, tarama sonuçları — “elle toplanan dosya” yerine pipeline çıktısı |
+| **NIST CSF 2.0** | Six fonksiyon: Govern, Identify, Protect, Detect, Respond, Recover | Govern = policy as code; Detect = monitoring; Respond/Recover = incident + rollback |
+| **CIS Benchmarks** | OS/bulut/container için sertleştirme (hardening) baseline’ları | IaC’ta kodlanmış baseline + tarama ile sürekli doğrulama (drift = bulgu) |
+| **ISO 22301** | İş sürekliliği yönetimi (BC/DR) | Backup restore provası (GitLab dersi!), multi-region, RTO/RPO hedefleri |
+| **SLSA** | Build zinciri bütünlüğü seviyeleri | İmzalı imaj + attestation (Seviye 4 supply chain) |
+
+<Callout type="tip" title="SOC 2 Type II neden “yaşayan kanıt” ister?">
+  Type II, “politika yazılıydı” değil, “politika **bir dönem boyunca işledi**” demektir.
+  Bu, DevOps’un doğal ürünüdür: PR onay kayıtları, CI tarama geçmişi, erişim
+  incelemeleri — hepsi sürekli üretilen kanıttır. İlk sistemdeki gibi aylık Excel
+  toplamak yerine, kanıt üreten pipeline’ı tasarla; denetim dönemi geldiğinde
+  raporu sorgula, hazırla.
+</Callout>
+
+## ITIL 4 ve DevOps: sahte savaşın sonu
+
+“DevOps vs ITIL” tartışması, ITIL’in 2019’daki **4. versiyonuyla** büyük ölçüde kapandı: ITIL 4, Lean/Agile/DevOps’u açıkça kucakladı. Çatışan şey uygulamaydı, ilkeler değildi. Kurumsal gerçeklikte karşına çıkacak **değişim tipleri** ve CI karşılıkları:
+
+| ITIL değişim tipi | Tanımı | DevOps/CI karşılığı |
+| --- | --- | --- |
+| **Standard change** | Önceden onaylanmış, düşük riskli, tekrarlayan | Testleri geçen, şablonlu deploy’lar (auto-approved) — kanıt pipeline’da |
+| **Normal change** | Risk değerlendirmesi + onay gerekir | Environment onay kapısı (required reviewers) + canary doğrulaması |
+| **Emergency change** | Olay anı, hızlı onay yolu | Incident’te break-glass: kısa onay + **sonrası kayıt zorunlu** |
+
+<Callout type="warn" title="Emergency change disiplinsizliği klasik tuzaktır">
+  “Acildi, sonra belgeleyeceğiz” diyen her emergency change, belgelenmezse audit
+  bulgusuna ve tekrarına davetiye çıkarır. Doğru desen: acil onay yolu **kısa**
+  ama **kayıtsız değil** — ve sonraki iş gününde normal change kaydına
+  dönüşür. Google SRE kitaplarının “change management” bölümleri bu uzlaşının
+  referansıdır.
+</Callout>
+
+## Sektör matrisi: kim kime ne bekler?
+
+| Sektör | Baskın normlar | DevOps’a etkisi |
+| --- | --- | --- |
+| **Banka/Finans** | PCI-DSS, SOX, AB’de **DORA** (2025’ten itibaren dijital operasyonel dayanıklılık yasası), MAS/bölgesel denetçiler | Değişim kanıtı + dayanıklılık testleri (chaos, failover prova) zorunlu hale geliyor |
+| **SaaS/B2B yazılım** | SOC 2 (satış kapısı), ISO 27001 (kurumsal alım şartı), GDPR/KVKK | Sürekli kanıt altyapısı + müşteri güvenlik anketlerine hazır veri |
+| **Sağlık** | HIPAA, GxP/21 CFR Part 11 (ilaç/Validasyon) | Veri maskelendirme, değişmez kayıt, “validated state” sürekliliği |
+| **Kamu** | NIST tabanları, ülke veri yerleşimi, erişilebilirlik | Policy as code ile bölge/erişim kısıtı; şeffaf değişim kaydı |
+| **Telekom/Enerji** | Sektör SLA normları, kritik altyapı düzenlemeleri | Yüksek erişilebilirlik mimarisi + dar değişim pencereleri |
+| **Oyun/Medya** | Az regülasyon, yoğun kullanıcı beklentisi | Uptime ve lansman dayanıklılığı rekabet unsuru (Seviye 5 yüksek trafik dersi) |
+
+Aynı mühendislik pratikleri — hepsinin “yoğunluk ve kanıt biçimi” sektöre göre değişir.
+
+## Audit’e hazır DevOps: beş kanıt klasörü
+
+Denetim geldiğinde istenenler, iyi yönetilen bir DevOps ortamında zaten vardır:
+
+1. **Varlık envanteri** — IaC + SBOM (“ne var, hangi sürüm, kim sahibi?”)
+2. **Erişim kayıtları** — IAM incelemeleri + merkezi log (kim neye erişti)
+3. **Değişiklik kanıtı** — PR onayı + CI sonuçları + deploy kayıtları (Conventional Commits burada parlar)
+4. **Zafiyet yönetimi** — tarama geçmişi + yama SLA’ları (Equifax dersi)
+5. **Olay kayıtları** — incident timeline’lar + postmortem aksiyonlarının kapanışı
+
+<Callout type="tip" title="Kariyer perspektifi">
+  Standartları *uygulamak*, sertifikasından daha değerlidir — ama mülakatta
+  “ISO 27001 kapsamında erişim incelemesi nasıl yürütülür?” tipi soruları
+  rahat cevaplamak, regüle sektör kapılarını açar. Başlangıç okuması: ISO
+  27001 Annex A kontrol listesi + NIST CSF 2.0 tek sayfalık özeti — ikisi de
+  kamuya açık.
+</Callout>
+
+<Quiz
+  id="s5-standartlar"
+  questions={[
+    {
+      q: 'SOC 2 Type II, Type I’den temel farkı nedir?',
+      options: [
+        'Daha uzun rapor',
+        'Kontrollerin bir dönem boyunca işleyişini kanıtlar — yalnızca tasarımın o anki hali değil',
+        'Yalnızca bulut şirketleri için geçerlidir',
+        'Yasal zorunluluktur',
+      ],
+      answer: 1,
+      explain:
+        'Type II = süreklilik kanıtı. Bu yüzden DevOps’un otomatik üretilen kayıtları (PR, tarama, erişim logları) Type II’nin en ucuz kaynağıdır.',
+    },
+    {
+      q: 'ITIL “standard change” tipinin DevOps karşılığı nedir?',
+      options: [
+        'Her deploy için CAB toplantısı',
+        'Önceden onaylanmış, testleri geçen şablonlu deploy akışı — kanıt pipeline’da',
+        'Yalnızca emergency onay',
+        'Deploy yasağı',
+      ],
+      answer: 1,
+      explain:
+        'Standard change = pre-approved tekrarlayan düşük riskli değişiklik; CI kapıları riski ölçülebilir yaptıkça kapsam büyür.',
+    },
+    {
+      q: 'CIS Benchmarks’ın DevOps’taki tipik kullanımı?',
+      options: [
+        'Sunucu/container hardening baseline’larını IaC’ta kodlamak ve drift’i taramak',
+        'Fatura denetimi',
+        'Kod stili belirlemek',
+        'Sertifika yenilemek',
+      ],
+      answer: 0,
+      explain:
+        'Baseline IaC’ta kodlanır, tarama ile doğrulanır; sapma (drift) bir bulguya dönüşür.',
+    },
+    {
+      q: '2025’ten itibaren AB finans sektöründe dijital operasyonel dayanıklılığı zorunlu kılan düzenleme?',
+      options: ['GDPR', 'SOX', 'DORA', 'PSD2'],
+      answer: 2,
+      explain:
+        'EU DORA (Digital Operational Resilience Act), finans kuruluşlarına ICT dayanıklılığı ve olay raporlaması yükler — chaos/failover provaları artık uyumluluk konusudur.',
+    },
+    {
+      q: 'Audit öncesi “varlık envanteri” kanıtının en sürdürülebilir kaynağı?',
+      options: [
+        'Elle tutulan Excel',
+        'IaC + SBOM — koddan üretilen, sürümü izlenebilir envanter',
+        'Hatırlamak',
+        'Denetçinin notları',
+      ],
+      answer: 1,
+      explain:
+        'Koddan üretilen envanter günceldir ve sorgulanabilir; elle envanter ilk hafta eskiyelir.',
+    },
+  ]}
+/>
