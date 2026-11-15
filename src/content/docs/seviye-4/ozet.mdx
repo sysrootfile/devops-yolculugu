@@ -17,12 +17,24 @@ tags: ['özet', 'checkpoint']
 import Callout from '@components/Callout.astro';
 import Quiz from '@components/Quiz.astro';
 import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
 
 ## Özet haritası
 
 - **Observability:** log/metric/trace üçlüsü + golden sinyaller; monitoring vs observability (yeni soru sorabilme); Prometheus pull modeli, PromQL rate kalıbı, semptom-bazlı alarm; blackbox ile dışarıdan uptime
 - **SRE:** SLI→SLO→SLA; error budget = risk sermayesi (tükendiğinde feature durur); incident rolleri (IC koordinasyonu) + mitigate-first; blameless postmortem + aksiyon kapanması; chaos = hipotez + abort düğmesi
 - **DevSecOps:** secret yaşam döngüsü (rotasyon, merkezi kasa), supply chain (SBOM, Trivy, gitleaks, SolarWinds dersi), shift-left (SAST/DAST, Equifax dersi), OWASP sınıflarının altyapı karşılıkları
+
+<Mermaid
+  chart={`flowchart TD
+    A["Operasyon & Güven"] --> O["Observability<br/>log · metric · trace"]
+    A --> S["SRE<br/>SLO · incident · postmortem · chaos"]
+    A --> V["DevSecOps<br/>secret · supply chain · shift-left"]
+    O --> P["Prometheus + Grafana<br/>semptom bazlı alarm"]
+    S --> E["error budget<br/>mitigate-first"]
+    V --> C["SolarWinds · Equifax<br/>kanıtla öğren"]`}
+  caption="Seviye 4 kavram haritası"
+/>
 
 <Callout type="info" title="Bu seviyenin tek cümlelik özeti">
   “Kanıt olmadan çalışma sayılmaz”: güvenilirlik ölçülür (SLO), olaylar öğrenmeye

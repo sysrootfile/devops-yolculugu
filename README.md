@@ -67,4 +67,5 @@ src/
 
 ## 📄 Lisans
 
-İçerik ve kod kişisel öğrenme kullanımına açıktır.
+[MIT](LICENSE) — içerik ve kod, atıf belirtilerek serbestçe kullanılabilir.
+Katkı için [CONTRIBUTING.md](CONTRIBUTING.md) rehberine bak.

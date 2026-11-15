@@ -17,6 +17,7 @@ tags: ['özet', 'checkpoint', 'final']
 import Callout from '@components/Callout.astro';
 import Quiz from '@components/Quiz.astro';
 import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
 
 ## Özet haritası
 
@@ -26,6 +27,17 @@ import LabBox from '@components/LabBox.astro';
 - **Sektörel pratikler:** finans/sağlık/kamuda compliance as code; e-ticaret/oyun/medyada degradasyon merdiveni ve game day; AI’nin dört katmanı ve sağlam kullanım kuralları
 - **Gerçek olay arşivi:** Knight Capital, AWS S3, GitLab, Cloudflare, Equifax, Facebook — her biri “hangi seviye bunu önlerdi?” sorusuyla okunur
 - **Capstone:** CI → imaj → GitOps → küme → SLO’lu monitoring; dört dayanıklılık provasıyla kanıtlanmış production
+
+<Mermaid
+  chart={`flowchart TD
+    A["Ustalık"] --> G["GitOps<br/>ArgoCD · drift · pull modeli"]
+    A --> D["Desenler<br/>canary · blue-green · feature flag"]
+    A --> P["Platform<br/>golden path · Backstage"]
+    A --> S["Sektörler<br/>regüle · yüksek trafik · AI"]
+    A --> X["Olay arşivi<br/>6 gerçek vaka"]
+    A --> C["Capstone<br/>uçtan uca production"]`}
+  caption="Seviye 5 kavram haritası"
+/>
 
 <Callout type="tip" title="Yolculuğun tek cümlelik özeti">
   Kültür: sen yaz, sen çalıştır, hatadan öğren. Pratik: küçük parçalar, otomatik

@@ -1240,3 +1240,10 @@ main.content {
 .site-footer a {
   color: var(--text-soft);
 }
+
+.dash-reset {
+  max-width: 980px;
+  margin: 0 auto 20px;
+  padding: 0 24px;
+  text-align: center;
+}

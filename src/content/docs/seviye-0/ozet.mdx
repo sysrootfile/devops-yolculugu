@@ -16,6 +16,7 @@ tags: ['özet', 'checkpoint']
 import Callout from '@components/Callout.astro';
 import Quiz from '@components/Quiz.astro';
 import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
 
 ## Özet haritası
 
@@ -24,6 +25,16 @@ import LabBox from '@components/LabBox.astro';
 - **Kariyer yolları:** DevOps (teslim hattı), SRE (ölçülebilir güvenilirlik), Platform Engineering (self-service ürün) — ortak zemin: Linux + ağ + Git
 - **Bu site bir DevOps projesi:** dersler Content Collections + Zod şemasıyla doğrulanır, CI ile derlenir, Pages’te yayınlanır — dogfooding
 - **Araç kurulum rehberi:** Git, Node, GitHub CLI ve (Windows’ta) WSL2 — her kurulum `--version` ile doğrulanır
+
+<Mermaid
+  chart={`flowchart TD
+    A["DevOps nedir<br/>kültür + pratik + araç"] --> B["Tarihçe<br/>Waterfall → Agile → 2009 DevOpsDays"]
+    B --> C["CALMS<br/>Culture · Automation · Lean · Measurement · Sharing"]
+    A --> D["Kariyer<br/>DevOps / SRE / Platform"]
+    A --> E["Bu repo = canlı proje<br/>CI · Docker · Pages"]
+    E --> F["Kurulum Rehberi<br/>WSL2 + doğrulama disiplini"]`}
+  caption="Seviye 0 kavram haritası"
+/>
 
 <Callout type="tip" title="Bu seviyeden geçiş kriteri">
   Quiz’de 5/5 yapamadıysan sorun değil — yanlışların açıklamalarını oku, ilgili derse

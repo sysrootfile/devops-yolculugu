@@ -17,12 +17,24 @@ tags: ['özet', 'checkpoint']
 import Callout from '@components/Callout.astro';
 import Quiz from '@components/Quiz.astro';
 import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
 
 ## Özet haritası
 
 - **Linux & Terminal:** her şey bir dosyadır; gezinme + pipe zincirleri (`grep | wc -l`), rwx izinleri (600/644/755), süreçler ve `systemctl status → journalctl` sorun giderme akışı, `set -euo pipefail` ile script disiplini
 - **Ağ:** istek-yanıt zinciri (DNS → TCP → TLS → HTTP), durum kodlarının dili (4xx istemci / 5xx sunucu), SSH anahtar mantığı (600 izin, config, port forwarding), curl ile “ağdan uygulamaya” daraltma
 - **Git:** üç alan (working → staging → repo), merge/rebase ayrımı (paylaşılan dal rebase edilmez), Conventional Commits + Semver, hooks ile kalite kapısı
+
+<Mermaid
+  chart={`flowchart TD
+    A["Seviye 1: Temeller"] --> L["Linux<br/>izinler · süreçler · bash"]
+    A --> G["Ağ<br/>DNS · HTTP/TLS · SSH · curl"]
+    A --> T["Git<br/>alanlar · branch · semver"]
+    L --> P["pipe zincirleri<br/>set -euo pipefail"]
+    G --> H["diagnoz<br/>ağdan uygulamaya daralt"]
+    T --> R["PR akışı<br/>review + Conventional Commits"]`}
+  caption="Seviye 1 kavram haritası — üç temel taş"
+/>
 
 <Callout type="info" title="Neden bu üçü “temel taş”?">
   Seviye 2’de yazacağın pipeline aslında: Linux komutları koşar (`npm run build`),

@@ -17,6 +17,7 @@ tags: ['özet', 'checkpoint']
 import Callout from '@components/Callout.astro';
 import Quiz from '@components/Quiz.astro';
 import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
 
 ## Özet haritası
 
@@ -26,6 +27,17 @@ import LabBox from '@components/LabBox.astro';
 - **Secrets & Environments:** maskelenmiş secret’lar, fork PR’larına erişim yok, production environment onay kapısı
 - **Cache & Artifact:** cache hıza, artifact taşımaya yarar; “build → artifact → deploy” deseni
 - **Deploy stratejileri:** staging/prod ayrımı, smoke test (`curl` doğrulaması), rollback’i deploy’dan önce planlama
+
+<Mermaid
+  chart={`flowchart LR
+    A["git push"] --> B["kalite kapıları<br/>İçerik testi · build"]
+    B --> C["artifact<br/>tek üretim"]
+    C --> D["deploy<br/>+ smoke test"]
+    A --> E["secrets<br/>maskelenmiş · environment onayı"]
+    A --> F["cache<br/>lockfile hash"]
+    E --> G["rollback planı<br/>deploy’dan önce"]`}
+  caption="Seviye 2 kavram haritası — pipeline anatomisi"
+/>
 
 <Callout type="info" title="Bu seviyenin kanıtı bu reponun kendi CI’ında">
   push → **İçerik testleri** (`npm test`) → build → Docker imajı (GHCR) →

@@ -45,6 +45,10 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
       <div class="stat-num" id="stat-pct">0%</div>
       <div class="stat-label">genel ilerleme</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-quiz">—</div>
+      <div class="stat-label">quiz doğruluğu</div>
+    </div>
   </section>
 
   <section class="howto" aria-label="Nasıl kullanılır">
@@ -69,6 +73,10 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
       Tamamladığın dersler bu sayfada birikir; sıradaki ders otomatik seçilir.
     </div>
   </section>
+
+  <div class="dash-reset">
+    <button id="reset-progress" class="quiz-reset" type="button">↺ Tüm ilerlemeyi sıfırla</button>
+  </div>
 
   <section class="dash-levels" id="mufredat" aria-label="Müfredat">
     {
@@ -141,6 +149,23 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
       if (statDone) statDone.textContent = String(done);
       if (statPct) statPct.textContent = pct + '%';
 
+      // Quiz doğruluğu: dy:quiz:* anahtarlarındaki {c,t} değerlerini topla
+      let qc = 0;
+      let qt = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('dy:quiz:')) continue;
+        try {
+          const v = JSON.parse(localStorage.getItem(key) ?? '{}');
+          if (typeof v.c === 'number' && typeof v.t === 'number' && v.t > 0) {
+            qc += v.c;
+            qt += v.t;
+          }
+        } catch {}
+      }
+      const statQuiz = document.getElementById('stat-quiz');
+      if (statQuiz) statQuiz.textContent = qt > 0 ? `${Math.round((qc / qt) * 100)}%` : '—';
+
       // "Kaldığın yerden devam et" — sıradaki tamamlanmamış ders
       const nextLesson = rows.find((r) => r.getAttribute('data-done') !== 'true');
       const continueBtn = document.getElementById('continue-btn');
@@ -153,5 +178,17 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
 
     refreshDashboard();
     window.addEventListener('focus', refreshDashboard);
+
+    // İlerleme sıfırlama — tüm dy:* anahtarlarını temizler
+    document.getElementById('reset-progress')?.addEventListener('click', () => {
+      if (!confirm('Tüm ilerlemen (tamamlanan dersler, quiz skorları, lab işaretleri) silinecek. Emin misin?')) return;
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('dy:')) keys.push(key);
+      }
+      keys.forEach((k) => localStorage.removeItem(k));
+      refreshDashboard();
+    });
   </script>
 </Base>
