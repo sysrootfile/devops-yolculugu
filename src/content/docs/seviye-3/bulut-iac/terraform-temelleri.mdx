@@ -164,6 +164,12 @@ Aynı modülü dev/staging/prod için farklı değerlerle çağırırsın — Ia
 
 İyi pratik: **PR'da `terraform plan` çıktısı otomatik yorum olarak düşer** (CI). Review eden kişi, altyapının ne değişeceğini kodla birlikte görür. `apply` ise yalnızca merge sonrası, korumalı pipeline'dan geçer — altyapı değişikliği de bir deployment disiplinine tabidir.
 
+<Callout type="info" title="📦 Kurulum: Terraform">
+  Doğrula: `terraform --version`. Kurulum: Windows `winget install Hashicorp.Terraform`
+  · macOS `brew tap hashicorp/tap && brew install hashicorp/tap/hashicorp/terraform`
+  · Linux resmî apt deposu: **Araç Kurulum Rehberi**.
+</Callout>
+
 <LabBox
   id="s3-terraform-lab"
   title="İlk terraform döngün"

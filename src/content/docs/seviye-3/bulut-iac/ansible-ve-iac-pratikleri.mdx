@@ -34,6 +34,13 @@ flowchart LR
 
 ## Ansible: SSH + YAML
 
+<Callout type="info" title="📦 Kurulum: Ansible (Linux/WSL)">
+  Doğrula: `ansible --version`. Kurulum: `sudo apt install ansible` veya
+  `pipx install --include-deps ansible`. Ansible kontrol makinesi Linux'ta koşar —
+  Windows'ta WSL2 kullan. Detaylar: **Araç Kurulum Rehberi**.
+</Callout>
+
+
 Ansible agent kurmaz: SSH üzerinden bağlanır (Seviye 1'deki SSH bilgisi!) ve YAML "playbook"ları çalıştırır.
 
 **Envanter** (`hosts.ini`):

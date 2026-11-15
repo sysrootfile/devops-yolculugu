@@ -10,7 +10,7 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 
 ## ✨ Özellikler
 
-- **6 seviye · 15 modül · 52 ders** — Linux'tan GitOps'a, sektör pratiklerine kadar tam müfredat
+- **6 seviye · 15 modül · 53 ders** — Linux'tan GitOps'a, sektör pratiklerine kadar tam müfredat
 - 🧠 Her derste **quiz** — anlık geri bildirim, skor localStorage'da saklanır
 - 💻 Tarayıcıda çalışan **terminal simülatörü** — komutları güvenle dene
 - 🧪 Adım adım **lab kutuları** — kendi makinende uygula, doğrula, işaretle
@@ -22,7 +22,7 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 
 | Seviye | Konular |
 | --- | --- |
-| 🧭 **0 — Yolculuğa Başlangıç** | DevOps nedir, kültür/tarihçe, kariyer yolları, repo turu |
+| 🧭 **0 — Yolculuğa Başlangıç** | DevOps nedir, kültür/tarihçe, kariyer yolları, repo turu, araç kurulum rehberi |
 | 🌱 **1 — Temeller** | Linux & terminal, ağ (IP/DNS/HTTP/TLS/SSH), Git |
 | ⚙️ **2 — Otomasyon & CI/CD** | Pipeline kavramları, GitHub Actions, secrets, cache, deploy |
 | 📦 **3 — Konteynerler & Bulut** | Docker, Kubernetes, bulut kavramları, Terraform/Ansible, maliyet |

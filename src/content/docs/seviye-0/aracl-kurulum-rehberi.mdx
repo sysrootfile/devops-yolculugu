@@ -1,0 +1,186 @@
+---
+title: 'Araç Kurulum Rehberi'
+description: 'Yolculuk boyunca kullanacağın tüm araçların kurulumu — Windows (WSL2), macOS ve Linux için komutlar, doğrulama adımları ve sık sorunlar.'
+level: 0
+module: 'giris'
+order: 5
+duration: 30
+objectives:
+  - 'İlgili seviyeye geldiğinde gereken aracı kendi işletim sisteminde kurabilmek'
+  - 'Kurulumun doğrulama komutuyla tamamlandığını kanıtlayabilmek'
+  - 'Windows’ta “araç Windows’a mı WSL’e mi kurulur?” sorusunu doğru cevaplayabilmek'
+prerequisites:
+  - 'seviye-0/bu-site-bir-devops-projesi'
+tags: ['kurulum', 'referans', 'araçlar']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Bu ders bir referans sayfasıdır
+
+Amacı her şeyi **şimdi** kurmak değil: ilgili seviyeye geldiğinde geri dönüp doğru
+komutu kopyalamak. Her araç için üç şey verilir: **kurulum**, **doğrulama komutu**
+ve beklenen sonuç. Doğrulama adımını atlamayan kurulum, çalışmayan kurulumdur.
+
+<Callout type="tip" title="Windows kullanıcısıysan altın kural">
+  Komut satırı araçlarını (git, kubectl, kind, helm, terraform, ansible...) mümkün
+  olduğunca **WSL2 içine** kur; Windows tarafına yalnızca Docker Desktop ve editör
+  kur. Böylece lab’lar gerçek Linux ortamında koşar — üretim sunucularıyla aynı
+  dünyada. Docker Desktop, iki dünyayı köprüler (WSL entegrasyonu açık olsun).
+</Callout>
+
+## 0. Temel taban — her seviyede lazım
+
+| Araç | Windows (PowerShell) | macOS | Linux | Doğrula |
+| --- | --- | --- | --- | --- |
+| **Git** | `winget install --id Git.Git` | `brew install git` | `sudo apt install git` | `git --version` |
+| **Node.js 22+** | `winget install OpenJS.NodeJS.LTS` | `brew install node` | nvm: `nvm install 22` | `node -v` (≥ 22.12) |
+| **GitHub CLI** | `winget install GitHub.cli` | `brew install gh` | [cli.github.com](https://cli.github.com) apt reposu | `gh --version` |
+| **VS Code** (önerilir) | `winget install Microsoft.VisualStudioCode` | `brew install --cask visual-studio-code` | resmî .deb / rpm | `code --version` |
+
+Bu siteyi çalıştırmak için gereken tek şey bu tablo: `npm install && npm run dev`.
+
+## 1. Linux ortamı — Windows kullanıcıları için
+
+```powershell
+# PowerShell (yönetici) — WSL2 + Ubuntu kurulumu, tek komut
+wsl --install
+# kurulumdan sonra bilgisayarı yeniden başlat, Ubuntu kullanıcı adı/şifre belirle
+```
+
+Doğrulama: `wsl -l -v` → Ubuntu, VERSION 2. Ardından **Ubuntu terminalini aç ve
+aşağıdaki tüm araçları bu kabuğa kur** (apt komutları burada çalışır).
+
+## 2. Seviye 3 araçları — Docker, Kubernetes, IaC
+
+### Docker
+
+```bash
+# Windows: Docker Desktop (WSL2 entegrasyonunu etkinleştir)
+winget install Docker.DockerDesktop
+# macOS
+brew install --cask docker
+# Linux (resmî kolaylık scripti)
+curl -fsSL https://get.docker.com | sh
+```
+
+Doğrula: `docker version` — hem **Client** hem **Server** satırı görmelisin
+(Server yoksa daemon çalışmıyor demektir; Docker Desktop’ı başlat).
+
+### kubectl
+
+```bash
+winget install Kubernetes.kubectl   # Windows
+brew install kubectl                # macOS
+# Linux: resmî dokümandaki curl ile binary kurulumu
+```
+
+Doğrula: `kubectl version --client`. Küme sürümüyle ±1 majör sürüm kuralını koru.
+
+### kind (Kubernetes in Docker)
+
+```bash
+winget install Kubernetes.kind      # Windows
+brew install kind                   # macOS
+# Linux: GitHub releases'tan binary
+curl -Lo kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+```
+
+Doğrula: `kind version`. İlk küme: `kind create cluster --name deneme`.
+
+### Helm
+
+```bash
+winget install Helm.Helm            # Windows
+brew install helm                   # macOS
+curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash   # Linux
+```
+
+Doğrula: `helm version`.
+
+### Terraform
+
+```bash
+winget install Hashicorp.Terraform                       # Windows
+brew tap hashicorp/tap && brew install hashicorp/tap/hashicorp/terraform   # macOS
+# Linux: releases.hashicorp.com resmî apt deposu
+```
+
+Doğrula: `terraform --version`.
+
+### Ansible (yalnızca Linux/WSL — kontrol makinesi Linux’tur)
+
+```bash
+sudo apt install ansible            # Ubuntu/Debian
+pipx install --include-deps ansible # pipx olan her ortam
+```
+
+Doğrula: `ansible --version`.
+
+## 3. Seviye 4–5 araçları — izleme, güvenlik, GitOps
+
+| Araç | Kurulum | Doğrula | Nerede lazım? |
+| --- | --- | --- | --- |
+| **Prometheus + Grafana** | Kurulum gerektirmez — Docker Compose ile (Seviye 3 compose dersi) | `docker compose ps` | Seviye 4 observability |
+| **Trivy** | `brew install trivy` · apt: aquasecurity reposu · `docker run aquasec/trivy` | `trivy --version` | Seviye 4 supply chain |
+| **gitleaks** | `brew install gitleaks` · GitHub releases binary | `gitleaks version` | Seviye 4 secret taraması |
+| **Semgrep** | `pip install semgrep` · `brew install semgrep` | `semgrep --version` | Seviye 4 SAST |
+| **ArgoCD** | Sunucu bileşeni: `kubectl apply` ile kümeye; CLI: ayrıca kurulur — **adım adım: Seviye 5 GitOps dersi** | `argocd version` | Seviye 5 GitOps |
+
+## Sık karşılaşılan kurulum sorunları
+
+1. **“command not found” ama kurdum:** yeni kabuk aç (PATH güncellenmemiştir) veya `hash -r`.
+2. **Docker `Server` göstermiyor:** Docker Desktop çalışmıyor veya WSL entegrasyonu kapalı.
+3. **Node 22’den eski:** Astro 6 Node ≥ 22.12 ister; nvm ile `nvm install 22 && nvm use 22`.
+4. **kubectl sürüm uyarıları:** kubectl, küme sürümünün ±1 majörü içinde olmalı; kind kümeleriyle genelde sorun çıkmaz.
+5. **Windows’ta komut “WSL içinde mi PowerShell’de mi?” belirsizliği:** `wsl` yazarak Linux kabuğuna geç; apt/brew komutlarını orada çalıştır.
+
+<Callout type="warn" title="Kurulum disiplini">
+  Her kurulumdan sonra **doğrulama komutunu çalıştır ve çıktısını gör**. “Kurduğumu
+  hatırlıyorum” ile “`--version` çıktısını gördüm” arasındaki fark, lab’ların
+  yarısını kaybetmenle kazanman arasındaki farktır. Bu alışkanlık, ileride
+  production kurulumlarında da aynı şekilde işler.
+</Callout>
+
+<Quiz
+  id="s0-kurulum-rehberi"
+  questions={[
+    {
+      q: 'Windows kullanıcısı için araç kurulumunun önerilen düzeni nedir?',
+      options: [
+        'Tüm araçları PowerShell’e kurmak',
+        'Komut satırı araçlarını WSL2 içine, Docker Desktop ve editörü Windows tarafına kurmak',
+        'Hiçbir şey kurmadan her şeyi bulutta kullanmak',
+        'Sadece Docker kurup gerisini Docker içinde tutmaya çalışmak',
+      ],
+      answer: 1,
+      explain:
+        'Lab’lar Linux ortamını varsayar; WSL2 bunu Windows içinde sağlar. Docker Desktop iki dünyayı köprüler.',
+    },
+    {
+      q: 'Kurulumun tamamlandığını gösteren en güvenilir kanıt nedir?',
+      options: [
+        'Kurulum penceresini kapatmak',
+        'Sürüm/doğrulama komutunun çıktısını görmek (ör. terraform --version)',
+        'Kurulum programının “başarılı” yazması',
+        'İnternetteki öğreticiyle aynı adımları izlemek',
+      ],
+      answer: 1,
+      explain:
+        'Doğrulama komutu, aracın PATH’te olduğunu ve çalıştığını kanıtlar; kurulum sihirbazı bunu garanti etmez.',
+    },
+    {
+      q: '“Prometheus ve Grafana kurulumu” için bu rehberin önerisi nedir?',
+      options: [
+        'Her ikisini sunucuya elle kurmak',
+        'Docker Compose ile servis olarak ayağa kaldırmak (kurulum = compose dosyası)',
+        'Kubernetes’e Helm ile kurmak (daha baştan)',
+        'Yerine hazır SaaS kullanmak',
+      ],
+      answer: 1,
+      explain:
+        'Seviye 3–4’te compose yığını standarttır: tanım dosyası versiyonlanır, tek komutla ayağa kalkar.',
+    },
+  ]}
+/>

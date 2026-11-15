@@ -79,6 +79,74 @@ argocd app diff devops-site          # Git vs küme farkı
 
 **Auto-sync tartışması:** `automated` sync ile Git'e merge = küme değişir (tam GitOps); manuel sync ile ince kontrol. Prod'da yaygın orta yol: auto-sync + **sync windows** (uygulama saatleri) + canary (bir sonraki ders).
 
+## LAB: ArgoCD'yi Lokal Kümeye Kur
+
+Teori bitti — şimdi gerçek ArgoCD'yi kind kümesine kuralım. Gerekenler: Docker,
+kubectl, kind ve ArgoCD CLI (kurulum komutları için **Araç Kurulum Rehberi** dersi).
+
+```bash
+# 1. Lokal küme oluştur
+kind create cluster --name gitops-lab
+
+# 2. ArgoCD sunucu bileşenini kur
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl -n argocd rollout status deploy/argocd-server
+# → "successfully rolled out" görene kadar bekle (ilk kurulum 1-2 dk sürer)
+
+# 3. UI'ya eriş (ayrı bir terminalde çalıştır, açık kalsın)
+kubectl -n argocd port-forward svc/argocd-server 8080:443
+# → tarayıcı: https://localhost:8080  (kullanıcı adı: admin)
+
+# 4. Admin şifresini al (iki yol)
+argocd admin initial-password -n argocd
+# CLI yoksa: kubectl -n argocd get secret argocd-initial-admin-secret \
+#   -o jsonpath="{.data.password}" | base64 -d
+
+# 5. CLI ile giriş yap
+argocd login localhost:8080 --username admin --insecure
+argocd version
+```
+
+### İlk uygulamayı Git'ten senkronla
+
+```bash
+# ArgoCD'nin resmî örnek deposundan bir uygulama tanımla
+argocd app create guestbook \
+  --repo https://github.com/argoproj/argocd-example-apps.git \
+  --path guestbook \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace default
+
+argocd app sync guestbook        # Git'teki hali kümeye uygular
+argocd app get guestbook         # durum: Synced + Healthy görmelisin
+kubectl get pods                 # guestbook pod'u kümede!
+```
+
+Şimdi asıl deney: **kümeye elle müdahale et ve ArgoCD'nin tepkisini izle.**
+
+```bash
+kubectl delete deployment guestbook-ui      # elle sil
+sleep 15 && kubectl get pods                # ArgoCD geri getirdi mi?
+argocd app diff guestbook                   # Git = küme mi, fark var mı?
+```
+
+Self-healing (Seviye 3) artık **Git seviyesinde** çalışıyor: küme, Git'teki istenen
+hâle geri döner. İşte GitOps'un “sürekli eşitleme” ilkesinin canlı kanıtı.
+
+```bash
+# Temizlik
+argocd app delete guestbook
+kind delete cluster --name gitops-lab
+```
+
+<Callout type="tip" title="Production notu">
+  Bu lab tek kümede port-forward ile çalışır. Gerçek kurulumda UI trafiği Ingress
+  üzerinden (Seviye 3) yayınlanır, SSO ile giriş entegre edilir ve ArgoCD’nin
+  kendi repo erişim anahtarları Secret manager’dan beslenir. Adımlar farklı,
+  ilke aynı: **küme, Git’in gölgesi gibi hareket eder.**
+</Callout>
+
 ## Flux: ikinci büyük alternatif
 
 **Flux** aynı modeli daha “K8s-native” (GitOps Toolkit API'leri ile) uygular: `Kustomization`/`HelmRelease` kaynaklarıyla deklaratif yapılandırma. ArgoCD'nin güçlü UI'si var, Flux'ın composability'si. İkisi de CNCF projesi — seçim ekip/kurum tercihine bağlı; **ilke** ikisinde aynıdır.

@@ -59,6 +59,13 @@ Tarihsel saldırı sınıfları:
 - **`npm audit` / `pip-audit`** CI'da her koşumda
 - **Trivy:** hem dosya sistemi hem container imajı tarayıcı
 
+<Callout type="info" title="📦 Kurulum: Trivy + gitleaks">
+  Doğrula: `trivy --version` ve `gitleaks version`. Kurulum: `brew install trivy
+  gitleaks` · Linux için aquasecurity/gitleaks apt-binary kurulumları: **Araç
+  Kurulum Rehberi**. CI'ya kurulum gerektirmez — resmî action'lar hazır imaj
+  kullanır (bir sonraki kod bloğu).
+</Callout>
+
 ```yaml
 # CI'ya imaj taraması ekleme
 - uses: aquasecurity/trivy-action@master
