@@ -1,5 +1,7 @@
 # 🚀 DevOps Yolculuğu
 
+**🌐 Canlı: https://sysrootfile.github.io/devops-yolculugu/**
+
 Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6](https://astro.build) ile üretildi.
 
 > Bu site **kendisi de bir DevOps projesidir**: İçeriği Astro Content Collections ile
@@ -31,10 +33,14 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 
 ```bash
 npm install     # bağımlılıklar (Node 22+ gerekir)
-npm run dev     # geliştirme sunucusu → http://localhost:4321
+npm run dev     # geliştirme sunucusu → http://localhost:4321/devops-yolculugu/
 npm run build   # statik siteyi dist/ klasörüne üret
-npm run preview # build çıktısını önizle
+npm run preview # build çıktısını önizle (aynı alt yol ile)
 ```
+
+> **Not:** Site GitHub Pages proje sitesi olarak `/devops-yolculugu/` alt yolunda
+> servis edilir (`astro.config.mjs` → `base`). Yerel geliştirmeye de aynı alt yolla
+> erişilir. Kendi alan adına geçersen `base` satırını silmen yeterli.
 
 ## 📁 Yapı
 

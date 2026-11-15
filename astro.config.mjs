@@ -4,7 +4,12 @@ import mdx from '@astrojs/mdx';
 
 // DevOps Yolculuğu — interaktif DevOps öğrenme platformu
 export default defineConfig({
-  site: 'https://devops-yolculugu.local',
+  // GitHub Pages proje sitesi: https://sysrootfile.github.io/devops-yolculugu/
+  // Not: base ayarı sayesinde tüm çıktı /devops-yolculugu/ altına üretilir;
+  // yerel geliştirme de aynı yol altında çalışır (localhost:4321/devops-yolculugu/).
+  // Kendi alan adına geçersen base satırını sil.
+  site: 'https://sysrootfile.github.io',
+  base: '/devops-yolculugu',
   integrations: [mdx()],
   markdown: {
     shikiConfig: {

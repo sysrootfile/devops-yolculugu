@@ -1,5 +1,12 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { LEVELS, MODULES, moduleById, type LevelMeta, type ModuleMeta } from '@consts';
+import {
+  LEVELS,
+  MODULES,
+  moduleById,
+  BASE,
+  type LevelMeta,
+  type ModuleMeta,
+} from '@consts';
 
 export type Doc = CollectionEntry<'docs'>;
 
@@ -18,7 +25,7 @@ export interface LessonVM {
 }
 
 export function toVM(doc: Doc): LessonVM {
-  return { id: doc.id, url: `/ders/${doc.id}`, ...doc.data };
+  return { id: doc.id, url: `${BASE}/ders/${doc.id}`, ...doc.data };
 }
 
 /** MODULES tanım sırası = müfredat sırası. */

@@ -6,6 +6,15 @@ export const SITE = {
     'Sıfırdan ileri seviyeye interaktif DevOps öğrenme platformu — quiz, lab ve terminal simülatörüyle.',
 };
 
+/** GitHub Pages alt yolu (astro.config.mjs'teki base ile uyumlu). */
+export const BASE = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '');
+
+/** İç linkleri base alt yoluna uyumlu üretir: withBase('/ders/x') → '/devops-yolculugu/ders/x' */
+export function withBase(path: string): string {
+  if (path.startsWith('http') || path.startsWith('#') || path.startsWith('//')) return path;
+  return path === '/' ? `${BASE}/` : `${BASE}${path}`;
+}
+
 export interface LevelMeta {
   id: number;
   slug: string; // klasör adı

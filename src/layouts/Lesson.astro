@@ -3,7 +3,7 @@ import Base from './Base.astro';
 import Sidebar from '@components/Sidebar.astro';
 import CompleteRow from '@components/CompleteRow.astro';
 import { getAllDocs, getNeighbors, sortLessons, toVM, type Doc } from '@lib/content';
-import { levelById, moduleById } from '@consts';
+import { levelById, moduleById, withBase } from '@consts';
 
 interface Props {
   entry: Doc;
@@ -26,9 +26,9 @@ const lessonIndex = sortLessons(docs).findIndex((d) => d.id === entry.id) + 1;
       <article>
         <header class="lesson-header">
           <div class="breadcrumbs">
-            <a href="/">🏠 Ana Sayfa</a>
+            <a href={withBase('/')}>🏠 Ana Sayfa</a>
             <span aria-hidden="true">›</span>
-            <a href={`/#seviye-${vm.level}`}>{level?.name}</a>
+            <a href={withBase(`/#seviye-${vm.level}`)}>{level?.name}</a>
             <span aria-hidden="true">›</span>
             <span>{moduleMeta?.name}</span>
           </div>
