@@ -56,6 +56,14 @@ Elle cache de yazılabilir:
   “doğru sürüm” garantisi sayma.
 </Callout>
 
+<Callout type="info" title="Gerçek dünyadan: Bazel remote cache — aynı ilkenin endüstriyel hali">
+  Google'ın open-source derleme aracı **Bazel**'in ekosisteminde remote cache
+  standart donanımdır: “bu çıktı daha önce üretildiyse, girdileri aynıysa yeniden
+  üretme” kuralı büyük monorepo'larda derleme sürelerini saatlerden dakikalara
+  indirir. Seviye 2'de kurduğun npm cache ile aynı teoremin, farklı ölçekteki
+  uygulamasıdır: **cache, mühendisliğin tekrar olmadan çoğalma yöntemidir.**
+</Callout>
+
 ## Artifact: işin sonucunu paketle
 
 `dist/` klasörü build job'ında üretilir; deploy job'ı başka makinede. Arada taşıyıcı lazım:

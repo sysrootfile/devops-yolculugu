@@ -42,6 +42,15 @@ flowchart LR
 
 Kritik ayrım: **serverless ≠ sadece FaaS**. Managed database, queue, storage de serverless'tır — ortak payda: *ölçek ve bakım bulutta, sen kod ve politikada.*
 
+<Callout type="info" title="Gerçek dünyadan: Amazon Prime Video'nun monolit dersi (2023)">
+  Prime Video ekibi, izleme servisi için mimarisini serverless/mikroservislerden
+  **tek konteynerde koşan monolite** çevirdiğini yazdığında gündem oldu: gerekçe,
+  yüksek hacimde veri işlemleyen bu senaryoda maliyet ve performansın monolit
+  tarafında kalmasıydı. Ders “serverless kötüdür” değil — **mimari karar, yük
+  profiline göre verilir**: kısa ve düzensiz işler serverless, devasa ve sürekli
+  veri akışı bazen monolit. Hiçbir desen her senaryonun cevabı değildir.
+</Callout>
+
 ## Statik site + CDN: bu sitenin doğal formu
 
 Bu reponun ürettiği şey statik dosyalar. Bunun için en iyi mimari:

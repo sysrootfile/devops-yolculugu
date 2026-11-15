@@ -102,6 +102,15 @@ Satır satır anlatalım:
 
 Gördüğün desen: **npm ci'dan sonra gelen her adım, npm ci ile birlikte cache'ten düşer.** Bu yüzden manifest'ler önce kopyalanır.
 
+<Callout type="info" title="Gerçek dünyadan: taban imaj seçimi bir boyut stratejisidir">
+  Aynı Node uygulaması; Debian tabanlı bir imajda, `slim` varyantında ve
+  `alpine` tabanında kat kat farklı boyutlara sahiptir — ve “distroless” hareketi,
+  yalnızca runtime'ın gerçekte ihtiyaç duyduğu dosyaları bırakarak boyutu ve
+  saldırı yüzeyini minimuma indirir. Katman sırası (bu derste yaptığın cache
+  provası) build hızını; taban seçimi ise pull süresini ve güvenlik yükünü belirler.
+  İkisi birlikte imaj hijyeninin iki ayağıdır.
+</Callout>
+
 ## Çalıştır ve doğrula
 
 ```bash

@@ -83,6 +83,14 @@ jobs:
 
 Bu iki node sürümünde **paralel iki test job'ı** açar. `${{ }}` ifadeleri Actions'ın şablon dilidir; matrix değeri, secret'lar, event verileri hepsi bu sözdizimiyle okunur.
 
+<Callout type="info" title="Gerçek dünyadan: matrix, açık kaynağın standart silahı">
+  Node.js'in kendi reposu da dahil olmak üzere büyük açık kaynak projeleri, her
+  push'ta kodu **birden çok Node sürümü ve işletim sistemi** kombinasyonunda
+  matrix build ile sınar. “Benim makinemde çalışıyordu” probleminin CI karşılığı
+  budur: matris, kombinasyonları senin yerin denemeye alır. Bu dersteki küçük
+  matrix örneği, binlerce job'lık gerçek matrislerin minyatürüdür.
+</Callout>
+
 ## Sık yapılabilecek ilk hatalar
 
 1. **`npm install` yerine `npm ci`:** CI'da `npm ci` kullanılır — lockfile'a sadık, temiz kurulum

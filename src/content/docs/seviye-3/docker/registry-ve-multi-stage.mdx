@@ -59,6 +59,15 @@ CI içinde aynı iş, Actions ile:
 
 `${{ github.sha }}` etiketi: imajı **tam commit'e** bağlar — izlenebilirlik altın standarttır.
 
+<Callout type="info" title="Gerçek dünyadan: Docker Hub rate limit'leri ve CI'ların kaderi">
+  2020 sonbaharında Docker Hub, anonim pull'lara limit getirdiğinde dünyada
+  yüzlerce CI pipeline'ı “toomanyrequests” hatasıyla kırmızıya döndü. Endüstri
+  cevabı üç katlıydı: kendi registry'sine geçmek (GHCR), oturum açarak pull
+  yapmak ve gereksiz pull'u cache ile azaltmak. Registry seçimi artık altyapı
+  kararının bir parçasıdır — bu derste GHCR'ı kullanmamızın arkasındaki neden
+  budur.
+</Callout>
+
 ## Multi-stage: boyut = güvenlik + hız + maliyet
 
 Builder imajı zengindir (Node, npm, tüm dev bağımlılıkları) ama **çalıştırma** imajı sade olmalı:

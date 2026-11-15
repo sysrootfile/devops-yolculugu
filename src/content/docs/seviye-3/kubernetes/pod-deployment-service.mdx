@@ -161,6 +161,14 @@ K8s **downtime'sız** günceller: yeni pod ayağa kalkar, sağlıklıysa eskisi 
   7. Bitirince: `kind delete cluster --name devops-kamp` (kaynak kullanımı).
 </LabBox>
 
+<Callout type="info" title="Gerçek dünyadan: K8s bugün fiili standart">
+  CNCF’in yıllık anketlerinde kurumların ezici çoğunluğu Kubernetes
+  kullanıyor/değerlendiriyor diyor; bulut sağlayıcıların managed K8s servisleri
+  (EKS/AKS/GKE) değişikliğin maliyetini düşürerek benimsemeyi hızlandırdı.
+  Yani bu derste kind’da öğrendiğin komutlar, iş piyasasının en çok talep edilen
+  pratik becerilerinin birebir kendisidir.
+</Callout>
+
 <Callout type="tip" title="kubectl’de en değerli üç alışkanlık">
   1) `get pods` yerine `get pods -o wide` (node + IP görürsün). 2) Pod sorunluysa önce
   `describe pod <ad>` — Events kısmı yarı yarıya hata ayıklamayı bitirir. 3) `logs <ad> -f`

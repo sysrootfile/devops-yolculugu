@@ -108,6 +108,14 @@ for sunucu in sunucu-1 sunucu-2 sunucu-3; do
 done
 ```
 
+<Callout type="info" title="Gerçek dünyadan: bash'in sınırı nerede başlar?">
+  Google'ın açık **Shell Style Guide**'ı net bir çizgi çizer: bash, “100 satırı
+  geçmeyen küçük yardımcılar” içindir; büyüyen otomasyonlar Python/Go'ya taşınır.
+  Sebep: bash'ta tip sistemi, test edilebilirlik ve hata ayıklama zayıftır. Yani
+  “otomasyon refleksi” bash'e yazmayı değil, **doğru araca taşınma zamanını
+  tanımayı** da içerir — çoğu CI pipeline'ı bu iki dünyanın karışımıdır.
+</Callout>
+
 ## Küçük ama gerçek bir script: sağlık kontrolü
 
 ```bash

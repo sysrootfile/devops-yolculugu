@@ -93,6 +93,14 @@ Aşağıdaki simülatör gerçek bir bash'in küçük bir kopyası. Amaç: komut
 
 Simülatörde dikkat et: `grep ERROR app.log` tek bir komut ama aslında **filtreleme** yapıyor. Şimdi gerçek araçları öğrenelim.
 
+<Callout type="info" title="Gerçek dünyadan: grep'in doğuşu — bir gecelik araç, 50 yıllık standart">
+  `grep`, Ken Thompson tarafından 1973'te, ed editörünün komutlarından derlenmiş
+  tek geceelik bir araç olarak doğdu — amacı Amerikan Federalist makalelerinin
+  yazarlığını analiz etmekti. 50 yıldır sözdizimi neredeyse aynı: bugün
+  öğrendiğin `grep ERROR app.log`, 1974'teki komutla aynıdır. Unix araçlarının
+  dayanıklılığı bu dersin gizli mesajıdır.
+</Callout>
+
 ## Pipe: komutları zincirleme
 
 Unix felsefesi: *her araç tek işi iyi yapsın, araçlar birleşsin.* Pipe (`|`) bir komutun çıktısını diğerinin girdisine bağlar:

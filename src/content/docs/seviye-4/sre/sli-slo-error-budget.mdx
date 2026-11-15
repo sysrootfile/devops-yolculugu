@@ -40,6 +40,14 @@ flowchart LR
     SLO --> SLA["SLA<br/>SÖZLEŞME<br/>(hedef tutmazsa ne olur?)"]
 ```
 
+<Callout type="info" title="Gerçek dünyadan: Google Search bile 99.9 bandında hedefler">
+  Google'ın SRE kitabında vurgulanan çarpıcı gerçek: dünyanın en büyük arama
+  motoru bile güvenilirlik hedefini makul bir bantta (99.9+ aralığı) tutar — çünkü
+  son %0.1'in peşindeki maliyet, özellik geliştirmeden çalacaktır. Error budget
+  fikri, 2016'da ücretsiz yayınlanan **Google SRE kitabı**'ndan endüstriye yayıldı;
+  kitap hâlâ bu disiplinin ana kaynağıdır ve çevrimiçi ücretsizdir.
+</Callout>
+
 ## Error budget: başarısızlık payı
 
 SLO %99.5 ise, 30 günde izin verilen kesinti:

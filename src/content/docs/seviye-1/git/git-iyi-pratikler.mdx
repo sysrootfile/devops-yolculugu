@@ -71,6 +71,14 @@ Conventional Commits + Semver kombinasyonu otomasyona dönüşür: `feat` commit
   (10 > 2). Sürüm karşılaştırmaları metin değil, sayı üçlüsü üzerinden yapılır.
 </Callout>
 
+<Callout type="info" title="Gerçek dünyadan: Chrome 100 (2022) — sürümün iki hane problemi">
+  Mart 2022'de Chrome, ana sürüm numarası **100**'ü geçti ve sürüm numarasını
+  iki hane kabul eden yüzlerce site bozuldu; Google, aylar önceden uyarı sayfaları
+  yayınlamıştı. Ders: sürüm karşılaştırması yapan her kodun “üç haneli major”
+  senaryosuyla test edilmesi gerekir — Semver bir yazım kuralı değil, makinelerle
+  konuşma sözleşmesidir.
+</Callout>
+
 ## Git hooks: commit anında kalite kapısı
 
 `.git/hooks/` altındaki scriptler Git olaylarında otomatik çalışır. En çok kullanılanlar:

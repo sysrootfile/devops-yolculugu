@@ -137,6 +137,15 @@ Lock mekanizması kritiktir: iki kişi aynı anda `apply` ederse state bozulur; 
   }}
 />
 
+<Callout type="info" title="Gerçek dünyadan: Terraform lisansı ve OpenTofu çatallanması (2023)">
+  2023'te HashiCorp, Terraform'un lisansını MPL'den BSL'ye çevirdi; topluluk,
+  Linux Foundation çatısı altında **OpenTofu** adıyla projeyi çatalladı ve API
+  uyumlu hale getirdi. Ders iki katlı: (1) IaC kodu, yazdığın uygulama gibi
+  **araç riskine** tabidir — provider/tool sürümlerini pin'leme alışkanlığı bunu
+  yumuşatır; (2) vendor kilidi gerçek bir mühendislik riskidir, hobi projesinde
+  bile hesaba katılır.
+</Callout>
+
 ## Modüller: yeniden kullanılabilir altyapı
 
 Terraform kodu da fonksiyonlara bölünür — **module**:

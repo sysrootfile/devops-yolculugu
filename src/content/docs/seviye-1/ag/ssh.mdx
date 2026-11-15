@@ -98,6 +98,15 @@ ssh -R 8080:localhost:80 sunucu-1
 
 Bulut geliştirmede çok kullanılır: veritabanı management UI, staging uygulaması vb. — portu internete açmak yerine SSH tüneliyle güvenli eriş.
 
+<Callout type="info" title="Gerçek dünyadan: Target (2013) — üçüncü taraf uzaktan erişimin bedeli">
+  2013'te ABD perakende devi Target'a sızma, **ikmal/havalandırma tedarikçisinin
+  uzaktan erişim bilgileriyle** başladı; tedarikçi ağı ile ödeme ağı arasında
+  segmentasyon olmadığı için saldırı ~40 milyon kart verisine ulaştı. Ders: her
+  uzaktan erişim (SSH dahil) bir “kim, nereden, hangi ağa?” kararıdır ve
+  tedarikçi/jump host kısıtları ile segmentasyon bu sorunun cevabını kodda
+  tutar.
+</Callout>
+
 ## Sunucu tarafı sağlamlaştırma (özet)
 
 Production sunucusunda standart ayarlar (`/etc/ssh/sshd_config`):

@@ -91,6 +91,14 @@ steps:
 1. **PR'da hızlı süit** koşar (unit + build) — geliştirici beklemesin
 2. **Merge sonrası tam süit** koşar (E2E dahil) — main her zaman kanıtlı olsun
 
+<Callout type="info" title="Gerçek dünyadan: Google'ın flaky test savaşı">
+  Google, 2016'da yayınladığı deneyim yazısında milyonlarca test koşumunda
+  flakiness'ın **kaçınılmaz** olduğunu söyledi: çözüm silmek değil, flaky testleri
+  otomatik tespit edip izole kanallara ayırmak ve sahiplerine ölçülebilir SLA ile
+  düzelttirmekti. Yani “flaky = gürültü” sorunu, büyük ölçekte bir **mühendislik
+  programıdır** — bu dersin uyarısının endüstriyel versiyonu.
+</Callout>
+
 ## Flaky test: güven düşmanı
 
 Her koşumda aynı sonucu vermeyen test (flaky) ekipti iki şekilde zehirler: kırmızıya alışma ve sahte yeşillere itimat. Tavsiyeler: önce flakiness'ın kökünü bul (async bekleme, paylaşılan veritabanı durumu...), düzeltemiyorsan testi **gürültü kanalına** ayır ama silme — ve kesinlikle diğer testlerin sonucunu çarpıtmasına izin verme.

@@ -64,6 +64,14 @@ flowchart LR
 
 Trace, “p99 neden yükseldi?” sorusunu hipotezden **kanıta** indirir: payment içindeki db sorgusu 780ms — endeks yok.
 
+<Callout type="info" title="Gerçek dünyadan: Dapper (2010) — trace fikrinin kaynağı">
+  Google, 2010'da yayınladığı **Dapper** makalesiyle dağıtık izleme (distributed
+  tracing) kavramını endüstriye sundu: istekler trace_id ile etiketlenir, her
+  atlama bir span olarak kaydedilir. Zipkin, Jaeger ve OpenTelemetry'nin hepsi
+  bu makalenin çocuklarıdır. Mikroservis dünyasında “p99 yükseldi — hangi servis?”
+  sorusunun cevabı, 15 yıllık bu makalede yazılıdır.
+</Callout>
+
 ## OpenTelemetry (OTel): tek standart, tüm vendor'lar
 
 Eskiden her vendor'ın (Datadog, New Relic...) kendi agent'ı ve API'si vardı — vendor kilitlenmesi. **OpenTelemetry**, CNCF standartı olarak üç şey sunar:

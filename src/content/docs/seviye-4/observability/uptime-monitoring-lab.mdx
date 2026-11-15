@@ -71,6 +71,15 @@ probe_http_status_code{...}                    200
   incident akışının parçası olarak yine göreceksin.
 </Callout>
 
+<Callout type="info" title="Gerçek dünyadan: Fastly kesintisi (Haziran 2021) — 49 dakika, küresel">
+  CDN sağlayıcısı Fastly'de tek bir konfigürasyon değişikliği dünya genelinde
+  ~49 dakikalık kesinti yarattı (Reddit, BBC, Amazon dahil). İki çarpıcı detay:
+  (1) sorun tek bir konfigürasyon dağıtımıydı — global rollout'un kendisi hızlıydı,
+  doğrulaması eksikti; (2) Fastly, izleme sayesinde dakikalar içinde kök nedeni
+  bulup geri aldı. Monitoring'in farkı budur: kesinti sıfırlanamaz ama **süre**
+  ölçülebilir derecede kısaltılır — MTTR'nin (Seviye 4 SRE) canlı örneği.
+</Callout>
+
 ## Prova: bilinçli kesinti
 
 İzleme kurulduktan sonra yapılacak en değerli iş **test etmektir**:
