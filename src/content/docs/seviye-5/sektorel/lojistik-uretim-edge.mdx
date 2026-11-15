@@ -1,0 +1,138 @@
+---
+title: 'Lojistik, Üretim ve Edge DevOps'
+description: 'Milyon cihazlık filolara OTA güncelleme, A/B partition rollback, Industry 4.0 ve dijital ikiz — sunucu değil cihaz sürdüğün dünyada DevOps normları.'
+level: 5
+module: 'sektorel'
+order: 6
+duration: 22
+objectives:
+  - 'Fleet (cihaz filosu) dünyası ile klasik sunucu dünyasının farklarını ayırt edebilmek'
+  - 'OTA güncelleme normlarını (A/B partition, imza, kademeli rollout) kurabilmek'
+  - 'Edge ve Industry 4.0 bağlamında digital twin ve bağlantısız çalışma ilkelerini uygulayabilmek'
+prerequisites:
+  - 'seviye-5/sektorel/telekom-enerji-kritik-altyapi'
+tags: ['sektör', 'edge', 'iot', 'üretim']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Farklı bir dağıtım problemi: SSH atamazsın
+
+Seviye 3’te Kubernetes öğrendin: istediğin pod’u saniyeler içinde yeniden başlatırsın. Şimdi sahneyi değiştir: **2 milyon cihaz** — şehirdeki elektrik sayaçları, depodaki el terminalleri, sahada ki araç üstü bilgisayarlar, müşterinin duvarındaki termostat. Cihazlar:
+
+- **Çevrimdışı çoğu zaman** — senin SSH’ine erişemezsin; onlar sana bağlanır (MQTT vb.)
+- **Pahalıya geri gidemez** — servise çağırmak yerine OTA (over-the-air) güncelleme zorunludur
+- **Ölü kalırsa “brick” olur** — kötü bir güncelleme cihazı kullanılamaz hale getirebilir
+
+Bu dünyada DevOps’un adı **fleet management**’tır ve normları klasik sunucu dünyasından farklıdır.
+
+## OTA güncelleme normları
+
+| Norm | Neden? | DevOps karşılığı |
+| --- | --- | --- |
+| **A/B partition** | Güncelleme pasif bölüme yazılır; açılış başarısızsa cihaz otomatik eskiye döner | Built-in rollback — “update sonrası açılmıyor” klasik felaketi tasarımda çözülür |
+| **İmza zorunluluğu** | Güncelleme paketi üreticinin anahtarıyla imzalanır; cihaz imzasız paket reddeder | Supply chain (Seviye 4) burada fiziksel güvenlik olur |
+| **Kademeli rollout** | %1 → %5 → %25 … pilot bölge → tüm filo | Canary’nin cihaz versiyonu; metrik: cihaz sağlık sinyalleri |
+| **Enerji/kota disiplini** | Güncelleme pil ve veri kotalarına saygılı zamanlanır | Kullanıcı deneyimi normu |
+| **Bağlantısız dayanıklılık** | Cihaz, güncelleme yarıda kesilse bile tutarlı durumda açılmalı | Transactional update tasarımı |
+
+<Callout type="info" title="Gerçek dünyadan: Tesla’nın OTA recall’ları">
+  Otomotivde artık geri çağırmalar (recall) bayi servisinden değil, **OTA ile**
+  yapılabiliyor: Tesla, NHTSA ile tespit edilen bazı sorunları milyonlarca araca
+  yazılım güncellemesiyle gece içinde çözdü. Aynı dünya: kademeli rollout, imzalı
+  paket, geri dönüş planı — cihaz sadece “araba”. Bu, deployment disiplininin
+  fiziksel dünyadaki en yüksek etki örneklerinden.
+</Callout>
+
+## Edge DevOps: bulut ilkelerinin kenara taşınması
+
+**Edge computing** = verinin oluştuğu yere yakın hesaplama (fabrika zemininde kutu, mağazada mini DC, araç içinde). Bulut DevOps ilkeleri buraya uyarlanır:
+
+- **CI/CD → CI/CD/OTA:** aynı pipeline, çıktısı container yerine **imzalı edge imajı**; hedef “cluster” yerine **cihaz filosu**
+- **GitOps edge’de de çalışır:** Git’teki istenen hâl (hangi cihazda hangi sürüm), fleet manager (AWS IoT Greengrass, Azure IoT, balena, Mender...) cihazlara senkronlar — ArgoCD deseninin filo versiyonu
+- **Telemetry-first:** cihaz sürekli sağlık sinyali verir (heartbeat); sinyal kesilmesi bir alarmdır
+- **Zero trust filo:** her cihazın kimliği vardır; “ağ içindeyim, güvenliyim” yoktur (Seviye 4 DevSecOps ilkesi)
+
+## Üretim: Industry 4.0 ve dijital ikiz
+
+Fabrikada “deploy” = üretim hattını durdurma riski. Normlar:
+
+1. **Dijital ikiz (digital twin):** fabrikanın sanal modelinde önce orada koştur — simülasyon, OT dersindeki prova disiplininin üretim versiyonu
+2. **Bakım penceresi = üretim duruşu:** değişiklikler planlı duruşlara sıkışır → pencere öncesi prova, pencere içinde zamanlanmış otomasyon
+3. **Sensör verisi = monitoring:** hattın metrikleri (hız, sıcaklık,Fire sayısı) Prometheus benzeri yığınlara akar; anomali = üretim hatasından önce uyarı
+4. **Eski + yeni birlikte:** 30 yıllık PLC’ler (S7, Modbus) ve bulut yan yana yaşar — entegrasyon katmanı (OPC UA gibi normlar) zorunlu
+
+## Lojistik: izlenebilirlik normu
+
+- **Her paketin dijital ikizi** — barkod/RFID/GPS akışı gerçek zamanlı monitoring olur; “kargo nerede?” sorusu bir dashboard sorusuna döner
+- **Entegrasyon normları:** partner sistemlerle EDI/API sözleşmeleri; bir deploy, partner entegrasyonunu bozarsa ticari olaydır (değişiklik öncesi sözleşme testleri)
+- **Zirve mevsimi** (Seviye 5 yüksek trafik dersi): Black Friday lojistikte de zirvedir — kapasite planı el terminali filosu için de yapılır
+
+<Callout type="tip" title="Ortak ilke: filo ölçeğinde küçük parça">
+  Hangi sektör olursa olsun formül aynıdır: **küçük parça + imza + kademeli
+  yayın + otomatik rollback + telemetri.** Sunucu dünyasında bunu CI’la yapıyorsun;
+  cihaz dünyasında OTA platformuyla. Araçlar değişir, disiplin aynı kalır —
+  bu reponun en çok tekrarladığı cümle.
+</Callout>
+
+## Pragmatik çıkarımlar
+
+1. **Rollback’i cihaz tasarımına göm** — A/B partition, “update sonrası açılmıyor” olayını sınıf hatasına indirger.
+2. **İmzasız OTA = supply chain olayı** — Seviye 4 disiplini burada fiziksel güvenliktir.
+3. **Bağlantısızlığı ilk gün tasarla** — cihazlar günlerce offline kalabilir; senkron ve güncelleme kuyruğu buna göre kurulmalı.
+4. **Digital twin, OT dünyasının “staging”idir** — canlıya giden her değişiklik ikizde provalıdır.
+
+<Quiz
+  id="s5-lojistik-edge"
+  questions={[
+    {
+      q: 'OTA güncellemelerinde A/B partition deseninin getirdiği garanti?',
+      options: [
+        'Güncelleme daha hızlı iner',
+        'Açılış başarısızsa cihaz otomatik eski sürüme döner — brick olmaz',
+        'Veri kotası tasarrufu',
+        'Şifreleme sağlar',
+      ],
+      answer: 1,
+      explain:
+        'Yeni sürüm pasif bölüme yazılır; cihaz yeni bölümden açılamazsa eski bölüme döner — rollback donanımda garanti edilir.',
+    },
+    {
+      q: 'GitOps deseni edge filosuna nasıl uyarlanır?',
+      options: [
+        'Uygulanamaz — edge’de Git olmaz',
+        'Git’ten istenen hâl (hangi cihaz, hangi sürüm) fleet manager ile cihazlara senkronlanır',
+        'Her cihaz kendi Git sunucusunu koşturur',
+        'Yalnızca manuel güncelleme',
+      ],
+      answer: 1,
+      explain:
+        'ArgoCD deseninin cihaz versiyonu: istenen hâl Git’te, fleet manager (balena/Mender/AWS IoT) sürekli eşitler.',
+    },
+    {
+      q: 'Üretimde “digital twin”in DevOps karşılığı nedir?',
+      options: [
+        'Üretim verisinin buluta kopyalanması',
+        'Fabrikanın sanal modelinde deploy provaları — OT dünyasının staging’i',
+        'Yedek sunucu',
+        'Çift veritabanı',
+      ],
+      answer: 1,
+      explain:
+        'Gerçek hattı durdurmadan kanıt üretme: değişiklik önce ikizde koşturulur, ölçülür, sonra planlı duruşta uygulanır.',
+    },
+    {
+      q: 'Filo güvenliğinde “zero trust” ne demektir?',
+      options: [
+        'Ağ içindeki tüm cihazlara güven',
+        'Her cihazın kimliği vardır; ağ konumu güven vermez — her bağlantı doğrulanır',
+        'Cihazlar şifre kullanmaz',
+        'Yalnızca yönetici cihazları bağlanabilir',
+      ],
+      answer: 1,
+      explain:
+        'Milyonlarca cihazda ağ çevresi güveni işlemez; cihaz kimliği + imzalı güncelleme + telemetri kombinasyonu gerekir.',
+    },
+  ]}
+/>

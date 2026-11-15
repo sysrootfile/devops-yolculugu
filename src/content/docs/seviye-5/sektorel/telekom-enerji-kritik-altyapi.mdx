@@ -1,0 +1,158 @@
+---
+title: 'Telekom, Enerji ve Kritik Altyapıda DevOps'
+description: 'Beş dokuz güvenilirlik, IT/OT ayrımı (Purdue modeli), IEC 62443 ve NIS2 normları — Colonial Pipeline ve Ukrayna vakalarıyla kritik altyapıda DevOps.'
+level: 5
+module: 'sektorel'
+order: 5
+duration: 25
+objectives:
+  - 'Five-nines güvenilirliğin operasyonel karşılığını hesaplayabilmek'
+  - 'IT/OT ayrımını ve Purdue modelini açıklayabilmek'
+  - 'NIS2, NERC CIP, IEC 62443 normlarının DevOps’a etkilerini listeleyebilmek'
+  - 'Colonial Pipeline ve Ukrayna olaylarından çıkarımları kendi tasarımına uygulayabilmek'
+prerequisites:
+  - 'seviye-5/sektorel/standartlar-ve-normlar'
+tags: ['sektör', 'telekom', 'enerji', 'kritik altyapı']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Beş dokuz: “deploy edemiyorsan” matematiği
+
+Web dünyasında %99.5 elitalık sayılır. Telekom ve enerjide standart **five nines — %99.999**: yılda toplam **~5 dakika 15 saniye** kesinti. Bu sayının getirdiği üç operasyonel kural:
+
+1. **Tek bir kötü deploy bu bütçeyi bir yıllığa tüketir** → her değişiklik simülasyon ortamında prova edilmeden üretime gitmez
+2. **Bakım penceresi lüksü yoktur** → çoğu değişiklik “trafik altında” yapılır (canary, hot-swap, yedekli yol)
+3. **Geri dönüş süresi (MTTR) tasarımın parçasıdır** → rollback, deploy’dan daha çok prova edilir
+
+## Telekom: donanım ağından cloud-native’e
+
+Telekom operatörleri on yıllardır iki dünyayı yönetiyor: fiziksel ağ ekipmanı ve artık container’laşan yazılım ağ fonksiyonları.
+
+- **NFV/ETSI NFV:** ağ fonksiyonlarının (firewall, yük dengeleyici, IMS...) özel donanımdan sanal makinelere, sonra container’lara evrimi — 5G core tamamen **cloud-native** tasarlandı (mikroservis + Kubernetes)
+- **OSS/BSS entegrasyonu:** operatörün faturalama ve ağ yönetim sistemleri onlarca yıllık; yeni deploy’lar bu sisteme **entegrasyon normlarına** uymak zorunda
+- **TL 9000:** telekom sektöre özgü kalite yönetim standardı (ISO 9001’in uzantısı) — tedarikçi seçiminde fiili şart
+- **Interconnect normları:** operatörler birbiriyle “roaming/peering” sözleşmeleriyle konuşur; bir deploy, partner ağına da etki edebilir
+
+<Callout type="info" title="Gerçek dünyadan: T-Mobile US (2021)">
+  T-Mobile, bakım amaçlı bir fiber kesinti sırasında hatalı konfigürasyonun yayılmasıyla
+  milyonlarca müşterisinin sesli/data servisini kaybetti — saatler sürdü. Ders: telekomda
+  “bakım işlemi” bile büyük boyutlu bir deployment’tır; önceden prova edilmemiş
+  konfigürasyon yayılımı, web dünyasındaki kötü deploy ile aynı ama daha pahalıdır.
+</Callout>
+
+## Enerji: IT/OT ayrımı ve Purdue modeli
+
+Enerji sektöründe DevOps’un en kritik kavramı **IT/OT ayrımıdır**:
+
+| | IT (bilgi teknolojisi) | OT (operasyonel teknoloji) |
+| --- | --- | --- |
+| Ne yönetir? | Ofis sistemleri, web, veri | SCADA, sensörler, kesiciler, üretim |
+| Öncelik | CIA: gizlilik önce | **AVA: erişilebilirlik ve güvenlik önce** |
+| Yamalama | Haftalık/aylık | Yıllık planlı duruşlarla — çünkü patch = üretim durması riski |
+| Mimari referans | Katmanlı web mimarisi | **Purdue modeli** (0–4 seviye: sensör → kontrol → supernet) |
+
+Purdue modelinin özü: OT ağları IT ağından **katmanlarla ve DMZ’lerle** ayrılır; IT’den OT’ya trafik belirli yön ve protokolle kısıtlıdır. DevOps’un görevi bu ayrımı **kodla korumak**: ağ politikaları IaC’ta, ihlaller monitoring’de.
+
+Gerçek olaylar bu ayrımın neden hayat-memat olduğunu gösterir:
+
+- **Ukrayna 2015/2016:** BlackEnergy ve Industroyer malware’leri dağıtım şebekelerine girip şalt cihazlarını komutla kapattı — yüz binlerce ev karanlıkta. Saldırı, IT ağından OT ağına geçişi başardı.
+- **Colonial Pipeline (2021):** fidye yazılımı **faturalama/IT** sistemini şifreledi; şirket önlem olarak **boru hattını (OT) elle durdurdu** — ABD doğu kıyısında günlerce yakıt krizi. Sızma noktası: MFA’sız tek bir VPN parolası.
+
+İkisinin ortak dersi: **IT ağındaki tek zayıf kimlik, OT ağını kapatabilir** — segmentasyon ve kimlik disiplini (Seviye 1 least privilege!) kritik altyapıda fiziksel sonuç üretir.
+
+## Normlar tablosu: kritik altyapıda kim ne ister?
+
+| Norm | Kapsam | DevOps’a etkisi |
+| --- | --- | --- |
+| **NIS2** (AB, 2024→) | Enerji, ulaşım, sağlık, dijital altyapı “temel/önemli kuruluşlar” | Olay raporlama süreleri (24 saatlik erken uyarı!), risk yönetimi kanıtı, yönetim kurulu sorumluluğu |
+| **NERC CIP** (ABD) | Şebekenin toplu güç sistemi | Erişim kayıtları, yama programı kanıtı, elektronik güvenlik perimetresi |
+| **IEC 62443** | Endüstriyel otomasyon (IACS) güvenliği | Zone/duvar tasarımı + bileşen güvenlik seviyeleri; tedarikçi ürün şartı |
+| **TL 9000** | Telekom kalitesi | Ölçüm raporlama + ürün yaşam döngüsü disiplini |
+| **ISO 22301** | İş sürekliliği | RTO/RPO hedefleri + restore provaları (GitLab dersi burada yasal hale gelir) |
+
+## DevOps’u OT’a uyarlama: hız yerine kanıt
+
+OT dünyasında “günde 10 deploy” hedef **değildir** — hedef şudur: *“her değişiklik, gerçek sisteme dokunmadan kanıtlanabilir.”* Bunun araçları:
+
+1. **Simülasyon ortamı / digital twin:** şebeke ya da fabrikanın sanal kopyası üzerinde deploy provası
+2. **Test bench (donanım tezgâhı):** aynı model röle/sensörle lab’da doğrulama
+3. **Kademeli yayın:** önce tek bölge/tek istasyon, ölçümle genişletme (canary’nin OT versiyonu)
+4. **Değişim kanıtı otomasyonu:** NIS2/CIP denetçilerine giden kanıt, yine pipeline’dan gelir (compliance as code — regule dersi burada da geçerli)
+5. **Break-glass disiplini:** acil müdahale yolu kısa ama kayıtsız olamaz (ITIL emergency change dersi)
+
+<Callout type="warn" title="Kritik altyapıda en pahalı cümle">
+  “Bizim ağımız internetten kopuk, bize sızamaz.” Colonial Pipeline internete
+  bağımlı faturalama ağı üzerinden etkilendi; Ukrayna saldırıları IT ağından
+  geçti. İzolasyon bir iddia değil, **kodlanmış ve sürekli doğrulanan** bir
+  politikadır — ve çoğu olay, IT tarafındaki tek bir kimlikten başlar.
+</Callout>
+
+## Pragmatik çıkarımlar
+
+1. **Hedef farklı, disiplin aynı:** beş dokuz dünyasında “hız” metriği yerine “kanıt hızı” ölçülür — ama küçük parça, otomatik test, geri dönüş planı değişmez.
+2. **Purdue modeli bir çizim değil, koddur:** segmentasyon politikaları IaC’ta, ihlal testleri chaos disiplininde.
+3. **Normlar erken gelir:** NIS2 kapsamındaki bir kuruluşta proje açılışında olay raporlama akışı tasarlanır — olaydan sonra değil.
+4. **Tedarikçi zinciri normu:** IEC 62443 bileşen sertifikası, telekomda TL 9000 — satın aldığın kutunun güvenlik seviyesi bir sözleşme maddesidir.
+
+<Quiz
+  id="s5-kritik-altyapi"
+  questions={[
+    {
+      q: 'Five nines (%99.999) güvenilirlik yıllık toplam kesintiyi yaklaşık kaç dakikaya kısıtlar?',
+      options: ['~5 saniye', '~52 dakika', '~5 dakika 15 saniye', 'Hiç kesinti olamaz'],
+      answer: 2,
+      explain:
+        '%0.001 × 525.600 dk ≈ 5.26 dk. Tek bir kötü deploy bu bütçeyi tüketebilir — bu yüzden her değişiklik provalıdır.',
+    },
+    {
+      q: 'Purdue modelinin OT dünyasındaki ana katkısı nedir?',
+      options: [
+        'Uygulama katmanlı mimari önerir',
+        'IT ile OT ağları arasındaki katmanlı ayrımı ve trafik kısıtlarını tanımlar',
+        'Veritabanı tasarım standardıdır',
+        'Yalnızca telekom için geçerlidir',
+      ],
+      answer: 1,
+      explain:
+        'Purdue (0–4+5M) seviyeleri, IT’den OT’ya geçişi DMZ ve yönlendirme kurallarıyla sınırlar; segmentasyonun referans mimarisidir.',
+    },
+    {
+      q: 'Colonial Pipeline (2021) olayının kritik altyapı dersi nedir?',
+      options: [
+        'Fidye yazılımı yalnızca bulutu etkiler',
+        'IT ağındaki tek zayıf kimlik (MFA’sız VPN), OT tarafını durduracak zincirin başı olabilir',
+        'Boru hatları hack edilemez',
+        'Yedekleme olayı önler',
+      ],
+      answer: 1,
+      explain:
+        'Sızma IT tarafındaydı; şirket OT’yi önlem olarak durdurdu. Segmentasyon + kimlik disiplini fiziksel sonuç üretir.',
+    },
+    {
+      q: 'NIS2’nin olay raporlamadaki DevOps’a somut etkisi?',
+      options: [
+        'Rapor gerekmez',
+        'Erken uyarı dahil kısa raporlama süreleri — olay kaydı ve timeline’ın otomatik üretilmesi şart',
+        'Yalnızca yıllık özet',
+        'Sadece telekom için',
+      ],
+      answer: 1,
+      explain:
+        'NIS2, erken uyarı/bildirim süreleri koyar; bu da incident timeline’ının elle değil, araçlardan otomatik üretilmesini gerektirir.',
+    },
+    {
+      q: 'OT dünyasında “her değişiklik kanıtlanabilir” ilkesinin tipik aracı?',
+      options: [
+        'Doğrudan prod’da canary',
+        'Simülasyon ortamı / digital twin + donanım test bench’i ile prova',
+        'Gece saatlerinde hızlı deploy',
+        'Yama yapmamak',
+      ],
+      answer: 1,
+      explain:
+        'Gerçek sisteme dokunmadan kanıt: sanal ikiz ve aynı donanımlı tezgâh provası — sonra kademeli yayın.',
+    },
+  ]}
+/>
