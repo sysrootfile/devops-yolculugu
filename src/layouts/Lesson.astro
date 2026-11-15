@@ -3,53 +3,69 @@ import { render } from 'astro:content';
 import Base from './Base.astro';
 import Sidebar from '@components/Sidebar.astro';
 import CompleteRow from '@components/CompleteRow.astro';
-import { getAllDocs, getNeighbors, sortLessons, toVM, type Doc } from '@lib/content';
-import { levelById, moduleById, withBase } from '@consts';
+import {
+  getAllDocs,
+  getDocsFor,
+  getNeighbors,
+  sortLessons,
+  toVM,
+  type Doc,
+  type AnyDoc,
+} from '@lib/content';
+import { levelById, moduleById, withBase, ui, type Locale } from '@consts';
 
 interface Props {
-  entry: Doc;
+  entry: AnyDoc;
+  lang?: Locale;
 }
 
-const { entry } = Astro.props;
+const { entry, lang = 'tr' } = Astro.props;
+const t = ui(lang);
 const { Content, headings } = await render(entry);
-const vm = toVM(entry);
-const docs = await getAllDocs();
+const vm = toVM(entry, lang);
+const docs = (await getDocsFor(lang)) as Doc[];
 const { prev, next } = getNeighbors(docs, entry.id);
 const level = levelById(entry.data.level);
 const moduleMeta = moduleById(entry.data.module);
 const totalLessons = sortLessons(docs).length;
 const lessonIndex = sortLessons(docs).findIndex((d) => d.id === entry.id) + 1;
 const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const nameOf = (m: { name: string; nameEn: string }) => (lang === 'en' ? m.nameEn : m.name);
+
+// Dil değiştirici: tr dersin en karşılığı var mı? (veya tersi)
+const altLangUrl = lang === 'en' ? withBase(`/ders/${entry.id}/`) : withBase(`/en/ders/${entry.id}/`);
+const homeUrl = withBase(lang === 'en' ? '/en/' : '/');
+const levelUrl = withBase(lang === 'en' ? `/en/#seviye-${vm.level}` : `/#seviye-${vm.level}`);
 ---
 
-<Base title={vm.title} description={vm.description}>
+<Base title={vm.title} description={vm.description} lang={lang} altLangUrl={altLangUrl}>
   <div class="shell">
-    <Sidebar />
+    <Sidebar lang={lang} />
     <main class="content">
       <article>
         <header class="lesson-header">
           <div class="breadcrumbs">
-            <a href={withBase('/')}>🏠 Ana Sayfa</a>
+            <a href={homeUrl}>{t.home}</a>
             <span aria-hidden="true">›</span>
-            <a href={withBase(`/#seviye-${vm.level}`)}>{level?.name}</a>
+            <a href={levelUrl}>{lang === 'en' ? level?.nameEn : level?.name}</a>
             <span aria-hidden="true">›</span>
-            <span>{moduleMeta?.name}</span>
+            <span>{lang === 'en' ? moduleMeta?.nameEn : moduleMeta?.name}</span>
           </div>
           <span class="level-badge" style={`background:${level?.color}`}>
-            {level?.emoji} {level?.name}
+            {level?.emoji} {lang === 'en' ? level?.nameEn : level?.name}
           </span>
           <h1>{vm.title}</h1>
           <p class="lesson-desc">{vm.description}</p>
           <div class="lesson-meta">
-            <span>⏱ ~{vm.duration} dk</span>
-            <span>📖 Ders {lessonIndex}/{totalLessons}</span>
+            <span>{t.minutes.replace('{d}', String(vm.duration))}</span>
+            <span>{t.lessonOf.replace('{i}', String(lessonIndex)).replace('{t}', String(totalLessons))}</span>
             {vm.tags.length > 0 && <span>🏷 {vm.tags.join(', ')}</span>}
           </div>
           {
             vm.id.endsWith('/ozet') && (
               <div style="margin-top: 14px">
                 <button type="button" class="print-btn" onclick="window.print()">
-                  🖨 Yazdır / PDF olarak kaydet
+                  🖨 {t.printBtn}
                 </button>
               </div>
             )
@@ -59,7 +75,7 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
         {
           vm.objectives.length > 0 && (
             <div class="objectives">
-              <h2>🎯 Bu derste</h2>
+              <h2>{t.objectives}</h2>
               <ul>
                 {vm.objectives.map((o) => (
                   <li>{o}</li>
@@ -71,8 +87,8 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 
         {
           toc.length >= 3 && (
-            <nav class="toc" aria-label="İçindekiler">
-              <h2>📑 İçindekiler</h2>
+            <nav class="toc" aria-label={t.toc}>
+              <h2>{t.toc}</h2>
               <ul>
                 {toc.map((h) => (
                   <li class:list={[`toc-d${h.depth}`]}>
@@ -88,13 +104,13 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
           <Content />
         </div>
 
-        <CompleteRow lessonId={vm.id} />
+        <CompleteRow lessonId={vm.id} lang={lang} />
 
         <nav class="pager" aria-label="Ders gezinmesi">
           {
             prev ? (
               <a href={prev.url} class="prev">
-                <span class="pg-label">← Önceki ders</span>
+                <span class="pg-label">{t.prev}</span>
                 <span class="pg-title">{prev.title}</span>
               </a>
             ) : (
@@ -104,7 +120,7 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
           {
             next ? (
               <a href={next.url} class="next">
-                <span class="pg-label">Sonraki ders →</span>
+                <span class="pg-label">{t.next}</span>
                 <span class="pg-title">{next.title}</span>
               </a>
             ) : (

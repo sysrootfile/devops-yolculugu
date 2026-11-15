@@ -1,9 +1,15 @@
 ---
-import { buildNavTree, getAllDocs } from '@lib/content';
+import { buildNavTree, getDocsFor } from '@lib/content';
+import { type Locale } from '@consts';
 
-const docs = await getAllDocs();
+interface Props {
+  lang?: Locale;
+}
+const { lang = 'tr' } = Astro.props;
+const docs = await getDocsFor(lang);
 const tree = buildNavTree(docs);
 const currentPath = Astro.url.pathname.replace(/\/$/, '');
+const nameOf = (m: { name: string; nameEn: string }) => (lang === 'en' ? m.nameEn : m.name);
 ---
 
 <nav class="sidebar" aria-label="Müfredat">
@@ -13,12 +19,12 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '');
         <div class="level-head">
           <span class="level-dot" style={`background:${level.meta.color}`} />
           <span style={`color:${level.meta.color}`}>
-            {level.meta.emoji} {level.meta.name}
+            {level.meta.emoji} {nameOf(level.meta)}
           </span>
         </div>
         {level.modules.map((mod) => (
           <div>
-            <div class="module-name">{mod.meta.name}</div>
+            <div class="module-name">{nameOf(mod.meta)}</div>
             {mod.lessons.map((lesson) => (
               <a
                 class:list={['lesson-link', { active: currentPath === lesson.url }]}

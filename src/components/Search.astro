@@ -1,23 +1,29 @@
 ---
-import { getAllDocs, sortLessons, toVM } from '@lib/content';
+import { getDocsFor, sortLessons, toVM, type Doc, type DocEn, type AnyDoc } from '@lib/content';
+import { ui, type Locale } from '@consts';
 
 // Build zamanında üretilen arama indeksi — istemciye gömülür.
-const docs = await getAllDocs();
-const index = sortLessons(docs).map((d) => {
-  const vm = toVM(d);
+interface Props {
+  lang?: Locale;
+}
+const { lang = 'tr' } = Astro.props;
+const docs = (await getDocsFor(lang)) as AnyDoc[];
+const index = sortLessons(docs as Doc[]).map((d) => {
+  const vm = toVM(d, lang);
   return { t: vm.title, d: vm.description, u: vm.url, l: vm.level };
 });
 
 // JSON içinde olası bir </script> dizisini güvenle kaçır.
 const safeJson = JSON.stringify(index).replaceAll('<', '\\u003c');
+const t = ui(lang);
 ---
 
-<div class="header-search">
+<div class="header-search" data-lang={lang}>
   <span class="search-icon" aria-hidden="true">🔍</span>
   <input
     type="search"
-    placeholder="Ders ara…  (Ctrl+K)"
-    aria-label="Derslerde ara"
+    placeholder={t.searchPlaceholder}
+    aria-label={lang === 'en' ? 'Search lessons' : 'Derslerde ara'}
     autocomplete="off"
   />
   <div class="search-results" role="listbox" hidden></div>
@@ -26,22 +32,34 @@ const safeJson = JSON.stringify(index).replaceAll('<', '\\u003c');
 <script type="application/json" id="dy-search-index" set:html={safeJson} />
 
 <script>
-  const LEVEL_NAMES = [
-    'Seviye 0',
-    'Seviye 1 · Temeller',
-    'Seviye 2 · CI/CD',
-    'Seviye 3 · Konteyner & Bulut',
-    'Seviye 4 · Operasyon',
-    'Seviye 5 · Ustalık',
-  ];
-
   type Item = { t: string; d: string; u: string; l: number };
 
   const box = document.querySelector<HTMLElement>('.header-search')!;
+  const lang = box.dataset.lang ?? 'tr';
   const input = box.querySelector<HTMLInputElement>('input')!;
   const panel = box.querySelector<HTMLElement>('.search-results')!;
   const raw = document.getElementById('dy-search-index')?.textContent ?? '[]';
   const index: Item[] = JSON.parse(raw);
+
+  const LEVEL_NAMES =
+    lang === 'en'
+      ? [
+          'Level 0',
+          'Level 1 · Foundations',
+          'Level 2 · CI/CD',
+          'Level 3 · Containers & Cloud',
+          'Level 4 · Operations',
+          'Level 5 · Mastery',
+        ]
+      : [
+          'Seviye 0',
+          'Seviye 1 · Temeller',
+          'Seviye 2 · CI/CD',
+          'Seviye 3 · Konteyner & Bulut',
+          'Seviye 4 · Operasyon',
+          'Seviye 5 · Ustalık',
+        ];
+  const emptyText = lang === 'en' ? 'No results found 🤷' : 'Sonuç bulunamadı 🤷';
 
   function hidePanel() {
     panel.hidden = true;
@@ -59,7 +77,7 @@ const safeJson = JSON.stringify(index).replaceAll('<', '\\u003c');
       .filter((it) => (it.t + ' ' + it.d).toLocaleLowerCase('tr-TR').includes(q))
       .slice(0, 8);
     if (hits.length === 0) {
-      panel.innerHTML = '<div class="search-empty">Sonuç bulunamadı 🤷</div>';
+      panel.innerHTML = `<div class="search-empty">${emptyText}</div>`;
     } else {
       panel.innerHTML = hits
         .map(

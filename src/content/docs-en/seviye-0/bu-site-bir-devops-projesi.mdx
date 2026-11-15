@@ -1,0 +1,143 @@
+---
+title: 'This Site Is a DevOps Project'
+description: 'A repo tour: the anatomy of the Astro project, content collections, the CI pipeline and how we will transform this site in the coming levels.'
+level: 0
+module: 'giris'
+order: 4
+duration: 15
+objectives:
+  - 'Understand the repo structure and the Astro foundation'
+  - 'Grasp the “dogfooding” approach — learn tools by applying them to this site'
+  - 'See how the site will evolve across levels'
+prerequisites:
+  - 'seviye-0/devops-nedir'
+tags: ['astro', 'repo', 'dogfooding']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import Mermaid from '@components/Mermaid.astro';
+
+## Why dogfooding?
+
+Eating your own dog food — using your own product. This repo serves two purposes at once:
+
+1. **A textbook:** it teaches DevOps interactively.
+2. **A live guinea pig:** every tool you learn gets applied to this very site.
+
+In Level 2 you'll write its real CI pipeline; in Level 3 you'll turn it into a Docker image and run it on Kubernetes; in Level 4 you'll monitor it; in Level 5 you'll ship it end-to-end to production. No concept stays floating on “some other example project”.
+
+## Let's walk the repo
+
+```
+devops-yolculugu/
+├── astro.config.mjs        # Astro configuration (Shiki theme, MDX)
+├── package.json            # dependencies and scripts
+├── tsconfig.json           # TypeScript + @ aliases
+├── public/                 # files copied as-is (favicon, vendor)
+├── .github/workflows/      # the CI pipeline (you'll write it in Level 2)
+└── src/
+    ├── content.config.ts   # content schema (validated by Zod)
+    ├── consts.ts           # level/module metadata
+    ├── styles/global.css   # design system
+    ├── lib/content.ts      # curriculum tree, sorting, navigation
+    ├── layouts/            # Base + Lesson templates
+    ├── components/         # Quiz, TerminalSim, LabBox, Flashcards...
+    ├── pages/              # routes (/, /ders/[...slug])
+    └── content/docs/       # ⭐ ALL LESSONS LIVE HERE
+        ├── seviye-0/
+        ├── seviye-1/{linux,ag,git}/
+        ├── seviye-2/{cicd,github-actions}/
+        ├── seviye-3/{docker,kubernetes,bulut-iac}/
+        ├── seviye-4/{observability,sre,devsecops}/
+        └── seviye-5/{gitops,sektorel,capstone}/
+```
+
+## Why Astro is a good choice here
+
+Astro is a **web framework** designed for content-driven sites. Three features matter for this repo:
+
+1. **Content Collections:** every `.mdx` file under `src/content/docs/` is **validated at build time** against the schema in `content.config.ts`. If a lesson says `level: 7`, the build **fails** — content quality is itself a CI check.
+2. **Islands Architecture:** interactive pieces (quiz, terminal simulator) load JavaScript only when needed; static text stays pure HTML. Result: a fast site.
+3. **Static output:** `npm run build` produces pure HTML/CSS/JS — the simplest, cheapest and safest hosting format. Deployment lessons lean on this.
+
+<Callout type="info" title="Schema = contract">
+  The content schema is a contract: every lesson's title, level, duration and
+  objectives are guaranteed by the schema. This is the content-world cousin of
+  Infrastructure as Code — configuration isn't separate from code, it's a
+  validated part of it.
+</Callout>
+
+## How the site gets built
+
+<Mermaid
+  chart={`flowchart LR
+    A["MDX lesson files"] --> B{"Zod schema<br/>check"}
+    B -->|error| X["❌ Build fails"]
+    B -->|pass| C["Astro compiler"]
+    C --> D["Static HTML/CSS/JS"]
+    D --> E["Hosting<br/>(Level 2+ topic)"]`}
+  caption="The road from content to live site — in Level 2 we connect this chain to CI."
+/>
+
+If you want to see it on the command line, from the repo root:
+
+```bash
+npm install    # install dependencies (once)
+npm run dev    # dev server (localhost:4321)
+npm run build  # produce the static site into dist/
+```
+
+## The site's transformation across levels
+
+| Level | What you'll add to the site |
+| --- | --- |
+| 1 | Its Git-versioned form; managing changes via branches/PRs |
+| 2 | GitHub Actions for automatic test + build + deploy |
+| 3 | A Dockerfile, image registry, deploy to a local Kubernetes cluster |
+| 4 | Uptime monitoring, log/metric collection |
+| 5 | A GitOps flow, canary/blue-green deploy scenario |
+
+Being both the **writer** and the **runner** of one project — that's the essence of DevOps.
+
+<Quiz
+  id="s0-repo-turu-en"
+  questions={[
+    {
+      q: 'If the Content Collections schema finds invalid data (e.g. level: 7), what happens?',
+      options: [
+        'The data is silently fixed',
+        'The lesson is excluded from the build',
+        'The build fails and reports the error',
+        'A warning is printed, the build continues',
+      ],
+      answer: 2,
+      explain:
+        'The Zod schema is validated at build time; violating content fails the build. Content quality becomes a CI control.',
+    },
+    {
+      q: 'What does Astro’s Islands Architecture provide?',
+      options: [
+        'Client-side rendering for all pages',
+        'Interactive pieces load JavaScript only when needed',
+        'Automatic database connections',
+        'CDN setup',
+      ],
+      answer: 1,
+      explain:
+        'In the islands model, static HTML is the default; interactive components hydrate as isolated islands.',
+    },
+    {
+      q: 'What does “dogfooding” mean in this repo?',
+      options: [
+        'Lessons start with dog emojis',
+        'Every learned tool is applied to this very site',
+        'Donating code to animal charities',
+        'Code review by pets',
+      ],
+      answer: 1,
+      explain:
+        'Using your own product: CI/CD, Docker and monitoring concepts get applied to this site’s real infrastructure.',
+    },
+  ]}
+/>

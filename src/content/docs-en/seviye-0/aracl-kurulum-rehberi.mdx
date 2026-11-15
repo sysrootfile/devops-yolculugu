@@ -1,0 +1,192 @@
+---
+title: 'Tool Setup Guide'
+description: 'Installing every tool used across the journey — commands for Windows (WSL2), macOS and Linux, plus verification steps and common pitfalls.'
+level: 0
+module: 'giris'
+order: 5
+duration: 30
+objectives:
+  - 'Install the tools you need for each level on your own OS'
+  - 'Prove each install with its verification command'
+  - 'Answer “tool in Windows or in WSL?” correctly'
+prerequisites:
+  - 'seviye-0/bu-site-bir-devops-projesi'
+tags: ['setup', 'reference', 'tooling']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## This lesson is a reference page
+
+The goal is not to install everything **now**: come back when you reach the level
+that needs the tool. Every entry gives three things: **install**, **verify command**
+and expected result. An installation without its verification is not an installation.
+
+<Callout type="tip" title="Golden rule for Windows users">
+  Install command-line tools (git, kubectl, kind, helm, terraform, ansible...) inside
+  **WSL2**; install only Docker Desktop and your editor on Windows itself. Labs then
+  run in a real Linux environment — the same world as production servers. Docker
+  Desktop bridges the two (keep WSL integration enabled).
+</Callout>
+
+## 0. Base layer — needed at every level
+
+| Tool | Windows (PowerShell) | macOS | Linux | Verify |
+| --- | --- | --- | --- | --- |
+| **Git** | `winget install --id Git.Git` | `brew install git` | `sudo apt install git` | `git --version` |
+| **Node.js 22+** | `winget install OpenJS.NodeJS.LTS` | `brew install node` | nvm: `nvm install 22` | `node -v` (≥ 22.12) |
+| **GitHub CLI** | `winget install GitHub.cli` | `brew install gh` | [cli.github.com](https://cli.github.com) apt repo | `gh --version` |
+| **VS Code** (recommended) | `winget install Microsoft.VisualStudioCode` | `brew install --cask visual-studio-code` | official .deb / rpm | `code --version` |
+
+To run this site, that table is all you need: `npm install && npm run dev`.
+
+## 1. A Linux environment — for Windows users
+
+```powershell
+# PowerShell (admin) — WSL2 + Ubuntu in one command
+wsl --install
+# reboot after install, set your Ubuntu username/password
+```
+
+Verify: `wsl -l -v` → Ubuntu, VERSION 2. Then **open the Ubuntu terminal and install
+all following tools inside that shell** (the apt commands run there).
+
+## 2. Level 3 tools — Docker, Kubernetes, IaC
+
+### Docker
+
+```bash
+winget install Docker.DockerDesktop   # Windows (enable WSL2 integration)
+brew install --cask docker            # macOS
+curl -fsSL https://get.docker.com | sh   # Linux (official convenience script)
+```
+
+Verify: `docker version` — you should see both **Client** and **Server** rows
+(no Server = daemon not running; start Docker Desktop).
+
+### kubectl
+
+```bash
+winget install Kubernetes.kubectl   # Windows
+brew install kubectl                # macOS
+# Linux: official curl-to-binary instructions
+```
+
+Verify: `kubectl version --client`. Keep kubectl within ±1 major of your cluster.
+
+### kind (Kubernetes in Docker)
+
+```bash
+winget install Kubernetes.kind      # Windows
+brew install kind                   # macOS
+curl -Lo kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+```
+
+Verify: `kind version`. First cluster: `kind create cluster --name test`.
+
+### Helm
+
+```bash
+winget install Helm.Helm            # Windows
+brew install helm                   # macOS
+curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash   # Linux
+```
+
+Verify: `helm version`.
+
+### Terraform
+
+```bash
+winget install Hashicorp.Terraform                       # Windows
+brew tap hashicorp/tap && brew install hashicorp/tap/hashicorp/terraform   # macOS
+# Linux: official apt repository at releases.hashicorp.com
+```
+
+Verify: `terraform --version`.
+
+### Ansible (Linux/WSL only — the control node is Linux)
+
+```bash
+sudo apt install ansible            # Ubuntu/Debian
+pipx install --include-deps ansible # anywhere with pipx
+```
+
+Verify: `ansible --version`.
+
+### Developer favorites: k9s and dive
+
+| Tool | What it does | Install | Verify |
+| --- | --- | --- | --- |
+| **k9s** | Terminal UI for Kubernetes: pod logs, rollouts, shell — seconds via keyboard | `brew install k9s` · `winget install Derailed.k9s` · Linux: GitHub releases | `k9s version` |
+| **dive** | Layer-by-layer image size analysis (“what's inside this layer?”) | `brew install dive` · Linux: GitHub releases | `dive --version` |
+
+Not must-haves, but they speed learning up a lot: `dive devops-site:1.0.0` shows
+your own image's layers (Level 3 Docker), and `k9s` lets you explore your kind
+cluster visually (Level 3 Kubernetes).
+
+## 3. Level 4–5 tools — monitoring, security, GitOps
+
+| Tool | Install | Verify | Needed in |
+| --- | --- | --- | --- |
+| **Prometheus + Grafana** | No install — runs via Docker Compose (Level 3 compose lesson) | `docker compose ps` | Level 4 observability |
+| **Trivy** | `brew install trivy` · apt: aquasecurity repo · `docker run aquasec/trivy` | `trivy --version` | Level 4 supply chain |
+| **gitleaks** | `brew install gitleaks` · GitHub releases binary | `gitleaks version` | Level 4 secret scanning |
+| **Semgrep** | `pip install semgrep` · `brew install semgrep` | `semgrep --version` | Level 4 SAST |
+| **ArgoCD** | Server component: `kubectl apply` into the cluster; CLI separately — **step by step: the Level 5 GitOps lesson** | `argocd version` | Level 5 GitOps |
+
+## Common setup pitfalls
+
+1. **“command not found” after installing:** open a new shell (PATH not refreshed) or run `hash -r`.
+2. **Docker shows no `Server` row:** Docker Desktop isn't running or WSL integration is off.
+3. **Node older than 22:** Astro 6 requires Node ≥ 22.12; with nvm: `nvm install 22 && nvm use 22`.
+4. **kubectl version warnings:** keep kubectl within ±1 major of the cluster; kind clusters rarely complain.
+5. **Windows: is the command for WSL or PowerShell?** Type `wsl` to enter the Linux shell; run apt/brew commands there.
+
+<Callout type="warn" title="Setup discipline">
+  After every install, **run the verification command and look at the output**. The
+  gap between “I think I installed it” and “I saw the --version output” is the gap
+  between losing and passing the labs. The same reflex works in production installs.
+</Callout>
+
+<Quiz
+  id="s0-kurulum-rehberi-en"
+  questions={[
+    {
+      q: 'What is the recommended tool layout for a Windows user?',
+      options: [
+        'Install everything in PowerShell',
+        'Command-line tools inside WSL2; Docker Desktop and the editor on Windows',
+        'Use nothing local, everything in the cloud',
+        'Install only Docker and keep everything inside it',
+      ],
+      answer: 1,
+      explain:
+        'Labs assume a Linux environment; WSL2 provides it inside Windows. Docker Desktop bridges the worlds.',
+    },
+    {
+      q: 'The most reliable proof that an installation is complete?',
+      options: [
+        'The installer window closing',
+        'Seeing the version/verification command output (e.g. terraform --version)',
+        'The installer printing “success”',
+        'Following the same tutorial as everyone',
+      ],
+      answer: 1,
+      explain:
+        'The verification command proves the tool is on PATH and working; installers guarantee neither.',
+    },
+    {
+      q: 'What does this guide recommend for “installing Prometheus and Grafana”?',
+      options: [
+        'Installing both manually on a server',
+        'Running them as services with Docker Compose (installation = a compose file)',
+        'Helm-installing them into Kubernetes from day one',
+        'Using a paid SaaS instead',
+      ],
+      answer: 1,
+      explain:
+        'In Levels 3–4 the compose stack is standard: the definition is versioned and comes up with one command.',
+    },
+  ]}
+/>

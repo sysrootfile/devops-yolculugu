@@ -1,33 +1,50 @@
 ---
 // Ders sonu "tamamlandı" satırı — localStorage + sidebar işaretlerini senkron tutar.
+import { ui, type Locale } from '@consts';
+
 interface Props {
   lessonId: string;
+  lang?: Locale;
 }
 
-const { lessonId } = Astro.props;
+const { lessonId, lang = 'tr' } = Astro.props;
+const t = ui(lang);
 ---
 
 <div class="complete-row" data-lesson-complete={lessonId}>
   <div class="cr-text">
-    <span class="cr-main">Bu dersi bitirdin mi?</span>
-    <span class="cr-sub">İşaretlediğinde dashboard’daki ilerlemen güncellenir.</span>
+    <span class="cr-main">{t.completeTitle}</span>
+    <span class="cr-sub">{t.completeHint}</span>
   </div>
-  <button class="complete-btn" type="button">✓ Tamamlandı olarak işaretle</button>
+  <button class="complete-btn" type="button">{t.completeBtn}</button>
 </div>
 
-<script define:vars={{ lessonId }}>
+<script define:vars={{ lessonId, lang, t }}>
   const key = 'dy:done:' + lessonId;
   const row = document.querySelector('[data-lesson-complete="' + lessonId + '"]');
   const btn = row.querySelector('.complete-btn');
   const sub = row.querySelector('.cr-sub');
+  const labels = {
+    tr: {
+      btn: '✓ Tamamlandı olarak işaretle',
+      done: '✓ Tamamlandı',
+      hint: 'İşaretlediğinde dashboard’daki ilerlemen güncellenir.',
+      doneHint: 'Harika! Dashboard’daki ilerlemen güncellendi.',
+    },
+    en: {
+      btn: '✓ Mark as completed',
+      done: '✓ Completed',
+      hint: 'Marking it updates your progress on the dashboard.',
+      doneHint: 'Nice! Your dashboard progress has been updated.',
+    },
+  };
+  const L = labels[lang] ?? labels.tr;
 
   function sync() {
     const done = localStorage.getItem(key) === '1';
     btn.classList.toggle('done', done);
-    btn.textContent = done ? '✓ Tamamlandı' : '✓ Tamamlandı olarak işaretle';
-    sub.textContent = done
-      ? 'Harika! Dashboard’daki ilerlemen güncellendi.'
-      : 'İşaretlediğinde dashboard’daki ilerlemen güncellenir.';
+    btn.textContent = done ? L.done : L.btn;
+    sub.textContent = done ? L.doneHint : L.hint;
     const link = document.querySelector('a[data-lesson-id="' + lessonId + '"]');
     if (link) link.setAttribute('data-done', done ? 'true' : 'false');
   }

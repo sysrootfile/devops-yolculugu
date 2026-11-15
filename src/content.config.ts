@@ -2,9 +2,8 @@ import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
 /**
- * Ders içerik koleksiyonu.
+ * Türkçe ders içerik koleksiyonu (varsayılan locale).
  * Dosya yapısı: src/content/docs/seviye-<n>/<modül>/<ders>.mdx
- * id örneği: "seviye-1/linux/temel-komutlar"
  */
 const docs = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './src/content/docs' }),
@@ -21,4 +20,13 @@ const docs = defineCollection({
   }),
 });
 
-export const collections = { docs };
+/**
+ * İngilizce ders koleksiyonu — id'ler tr koleksiyonunu aynalar
+ * (dil değiştirici 1:1 eşleme yapar). Henüz çevrilmemiş dersler yoktur.
+ */
+const docsEn = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/docs-en' }),
+  schema: docs.schema,
+});
+
+export const collections = { docs, docsEn };

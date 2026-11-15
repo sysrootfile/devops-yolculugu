@@ -92,6 +92,25 @@ test('quiz rozeti dashboardda görünür', async ({ page }) => {
   await expect(badge).toHaveAttribute('data-perfect', 'true');
 });
 
+test('dil değiştirici EN ders sayfasına gider', async ({ page }) => {
+  await page.goto(`${BASE}/ders/seviye-0/devops-nedir/`);
+  await page.locator('a.lang-switch').click();
+  await expect(page).toHaveURL(/\/en\/ders\/seviye-0\/devops-nedir/);
+  await expect(page.locator('h1')).toContainText('What Is DevOps');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+});
+
+test('EN dashboard yüklenir ve EN dersleri listeler', async ({ page }) => {
+  await page.goto(`${BASE}/en/`);
+  await expect(page.locator('h1')).toHaveText('DevOps Yolculuğu');
+  await expect(page.locator('a.lesson-row').first()).toContainText('What Is DevOps');
+  const rows = await page.locator('a.lesson-row').count();
+  expect(rows).toBe(6);
+  // TR'ye dönüş
+  await page.locator('a.lang-switch').click();
+  await expect(page).not.toHaveURL(/\/en\//);
+});
+
 test('mermaid diyagramı vendor dosyadan render olur', async ({ page }) => {
   await page.goto(`${BASE}/ders/seviye-0/bu-site-bir-devops-projesi/`);
   await expect(page.locator('.mermaid-target svg').first()).toBeVisible({ timeout: 10000 });

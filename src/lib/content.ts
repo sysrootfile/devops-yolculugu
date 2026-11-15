@@ -4,11 +4,14 @@ import {
   MODULES,
   moduleById,
   BASE,
+  type Locale,
   type LevelMeta,
   type ModuleMeta,
 } from '@consts';
 
 export type Doc = CollectionEntry<'docs'>;
+export type DocEn = CollectionEntry<'docsEn'>;
+export type AnyDoc = Doc | DocEn;
 
 export interface LessonVM {
   id: string;
@@ -24,8 +27,13 @@ export interface LessonVM {
   url: string;
 }
 
-export function toVM(doc: Doc): LessonVM {
-  return { id: doc.id, url: `${BASE}/ders/${doc.id}`, ...doc.data };
+export function toVM(doc: AnyDoc, locale: Locale = 'tr'): LessonVM {
+  const prefix = locale === 'en' ? `${BASE}/en/ders/` : `${BASE}/ders/`;
+  return { id: doc.id, url: `${prefix}${doc.id}`, ...doc.data };
+}
+
+export async function getDocsFor(locale: Locale): Promise<AnyDoc[]> {
+  return locale === 'en' ? getCollection('docsEn') : getCollection('docs');
 }
 
 /** MODULES tanım sırası = müfredat sırası. */

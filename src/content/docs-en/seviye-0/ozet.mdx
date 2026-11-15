@@ -1,0 +1,125 @@
+---
+title: '🎯 Level 0 Summary and Checkpoint'
+description: 'The Getting Started level in one map: DevOps definition, culture, career paths and your tool readiness — the exit checkpoint.'
+level: 0
+module: 'giris'
+order: 6
+duration: 15
+objectives:
+  - 'Connect the five Level 0 lessons into one map'
+  - 'Prove the basics in the checkpoint quiz'
+  - 'Verify your environment for Level 1'
+prerequisites: []
+tags: ['summary', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+import Mermaid from '@components/Mermaid.astro';
+
+## Summary map
+
+- **What DevOps is:** not a tool but “you write it, you run it”; the goal is tearing down the Dev–Ops wall (DORA metrics measure it)
+- **Culture and history:** Waterfall's delayed feedback → Agile's deployment bottleneck → 2009 DevOpsDays; the CALMS framework and the blameless mindset
+- **Career paths:** DevOps (delivery), SRE (measurable reliability), Platform Engineering (self-service product) — common ground: Linux + networking + Git
+- **This site is a DevOps project:** lessons are validated with a Zod schema, built by CI, published on Pages — dogfooding
+- **Tool setup guide:** Git, Node, GitHub CLI and (on Windows) WSL2 — every install verified with `--version`
+
+<Mermaid
+  chart={`flowchart TD
+    A["What is DevOps<br/>culture + practice + tools"] --> B["History<br/>Waterfall → Agile → 2009 DevOpsDays"]
+    B --> C["CALMS<br/>Culture · Automation · Lean · Measurement · Sharing"]
+    A --> D["Careers<br/>DevOps / SRE / Platform"]
+    A --> E["This repo = live project<br/>CI · Docker · Pages"]
+    E --> F["Setup Guide<br/>WSL2 + verification discipline"]`}
+  caption="Level 0 concept map"
+/>
+
+<Callout type="tip" title="Exit criteria for this level">
+  Not scoring 5/5 on the quiz is fine — read the explanations, revisit the lesson.
+  The goal isn't memorization but **direction sense**: answering “what does DevOps
+  change, and why?” in your own words.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s0-ozet-en"
+  title="Level 0 Checkpoint"
+  questions={[
+    {
+      q: 'The three legs of DevOps, in the right order?',
+      options: [
+        'Tools → Culture → Marketing',
+        'Culture → Practices → Tools',
+        'Test → Deploy → Monitoring',
+        'Linux → Docker → Kubernetes',
+      ],
+      answer: 1,
+      explain: 'The order is intentional: automation without culture produces faster chaos.',
+    },
+    {
+      q: 'Three of the four DORA metrics are?',
+      options: [
+        'CPU, RAM, disk, network',
+        'Deployment frequency, lead time, change failure rate, recovery time',
+        'SLO, SLI, SLA, MTTR',
+        'Commits, branches, PRs, stars',
+      ],
+      answer: 1,
+      explain: 'These four are the industry-standard delivery performance measures.',
+    },
+    {
+      q: 'The most distinguishing feature of SRE?',
+      options: [
+        'They don\'t code',
+        'They manage reliability through measurable SLO/error budgets',
+        'DevOps is only culture',
+        'No difference, just another name',
+      ],
+      answer: 1,
+      explain: 'SRE ties operations decisions to measurements rather than opinions.',
+    },
+    {
+      q: 'What does this site\'s “dogfooding” claim require?',
+      options: [
+        'Lessons working only on Windows',
+        'Every learned practice (CI, test, deploy) actually used on the site itself',
+        'A separate repo per lesson',
+        'Paid tools only',
+      ],
+      answer: 1,
+      explain:
+        'The repo\'s CI is real: content tests, a Docker image and Pages deploy are parts of the pipeline producing this page.',
+    },
+    {
+      q: 'The golden rule of the setup guide?',
+      options: [
+        'The installer\'s “success” message is enough',
+        'Every install is proven by its verification command output',
+        'Tools live only in the cloud',
+        'Versions don\'t matter',
+      ],
+      answer: 1,
+      explain: '“I think I installed it” vs “I saw the --version output” decides half the labs.',
+    },
+  ]}
+/>
+
+## Exit gate: getting ready for Level 1
+
+<LabBox
+  id="s0-ozet-lab-en"
+  title="Level 1 entry check"
+  verify={['git --version', 'node -v']}
+>
+  Level 1 starts at the terminal. Make sure:
+
+  - [ ] You can open a Linux environment (WSL2 / VM / cloud VM)
+  - [ ] `git --version` prints output
+  - [ ] This repo runs with `npm run dev` on your machine (the setup table is done)
+  - [ ] You bookmarked the Setup Guide (you'll return for Docker/kind in Level 3)
+</LabBox>
+
+If you're ready: **Level 1 — Linux & Terminal** puts you at the prompt. 🌱

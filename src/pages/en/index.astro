@@ -1,0 +1,156 @@
+---
+import Base from '@layouts/Base.astro';
+import Sidebar from '@components/Sidebar.astro';
+import { buildNavTree, getDocsFor, sortLessons, toVM } from '@lib/content';
+import { withBase, ui } from '@consts';
+
+const lang = 'en' as const;
+const t = ui(lang);
+const docs = await getDocsFor(lang);
+const tree = buildNavTree(docs);
+const allLessons = sortLessons(docs).map((d) => toVM(d, lang));
+const totalLessons = allLessons.length;
+const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
+---
+
+<Base lang="en">
+  <section class="hero">
+    <div class="hero-emoji" aria-hidden="true">🚀</div>
+    <h1>DevOps Yolculuğu</h1>
+    <p>
+      Interactive DevOps education from zero to advanced: every lesson ships with a quiz,
+      hands-on labs and a browser terminal simulator. This site <strong>is itself a DevOps
+      project</strong> — as you learn, you build its own infrastructure.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-primary" id="continue-btn" href={allLessons[0]?.url ?? '#'}>{t.continue}</a>
+      <a class="btn-ghost" href="#mufredat">{t.browse}</a>
+    </div>
+  </section>
+
+  <section class="dash-stats" aria-label="Progress stats">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-done">0</div>
+      <div class="stat-label">{t.statDone}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{totalLessons}</div>
+      <div class="stat-label">{t.statTotal}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">{tree.length}</div>
+      <div class="stat-label">{t.statLevels}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">~{Math.round(totalMinutes / 60)}h</div>
+      <div class="stat-label">{t.statHours}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-pct">0%</div>
+      <div class="stat-label">{t.statPct}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-quiz">—</div>
+      <div class="stat-label">{t.statQuiz}</div>
+    </div>
+  </section>
+
+  <div class="dash-reset">
+    <button id="reset-progress" class="quiz-reset" type="button">{t.resetBtn}</button>
+  </div>
+
+  <section class="dash-levels" id="mufredat" aria-label="Curriculum">
+    {
+      tree.map((level) => (
+        <div class="level-card" id={`seviye-${level.meta.id}`}>
+          <div class="lc-head">
+            <span class="lc-emoji" aria-hidden="true">{level.meta.emoji}</span>
+            <div>
+              <div class="lc-name" style={`color:${level.meta.color}`}>{level.meta.nameEn}</div>
+              <div class="lc-tagline">{level.meta.taglineEn}</div>
+            </div>
+          </div>
+          <div class="lc-progress">
+            <div class="progress-track" style={`--bar-color:${level.meta.color}`}>
+              <div class="progress-fill" />
+            </div>
+            <span class="lc-count" data-level-total={level.total}>0 / {level.total}</span>
+          </div>
+          <div class="lc-body">
+            {level.modules.map((mod) => (
+              <div class="module-row">
+                <div class="mr-name">{mod.meta.nameEn}</div>
+                {mod.lessons.map((lesson) => (
+                  <a class="lesson-row" href={lesson.url} data-lesson-id={lesson.id}>
+                    <span class="lr-check" aria-hidden="true">✓</span>
+                    <span class="lr-title">{lesson.title}</span>
+                    <span class="lr-duration">~{lesson.duration} min</span>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))
+    }
+  </section>
+
+  <script>
+    function refreshDashboard() {
+      const rows = Array.from(
+        document.querySelectorAll<HTMLAnchorElement>('a.lesson-row[data-lesson-id]')
+      );
+      let done = 0;
+
+      rows.forEach((row) => {
+        const id = row.getAttribute('data-lesson-id');
+        const isDone = id && localStorage.getItem('dy:done:' + id) === '1';
+        row.setAttribute('data-done', isDone ? 'true' : 'false');
+        if (isDone) done++;
+
+        const badge = row.querySelector<HTMLElement>('.lr-quiz');
+        const quizId = badge?.dataset.lessonQuiz;
+        if (quizId && badge) {
+          const raw = localStorage.getItem('dy:quiz:' + quizId);
+          if (raw) {
+            try {
+              const v = JSON.parse(raw);
+              if (typeof v.c === 'number' && typeof v.t === 'number' && v.t > 0) {
+                badge.textContent = `${v.c}/${v.t}`;
+                badge.setAttribute('data-filled', 'true');
+                if (v.c === v.t) badge.setAttribute('data-perfect', 'true');
+              }
+            } catch {}
+          }
+        }
+      });
+
+      document.querySelectorAll<HTMLElement>('.level-card').forEach((card) => {
+        const rows = card.querySelectorAll('a.lesson-row[data-lesson-id]');
+        const levelDone = Array.from(rows).filter(
+          (r) => r.getAttribute('data-done') === 'true'
+        ).length;
+        const fill = card.querySelector<HTMLElement>('.progress-fill');
+        const count = card.querySelector<HTMLElement>('.lc-count');
+        if (fill) fill.style.width = `${rows.length ? (levelDone / rows.length) * 100 : 0}%`;
+        if (count)
+          count.textContent = `${levelDone} / ${count.dataset.levelTotal ?? rows.length}`;
+      });
+
+      const pct = rows.length ? Math.round((done / rows.length) * 100) : 0;
+      const statDone = document.getElementById('stat-done');
+      const statPct = document.getElementById('stat-pct');
+      if (statDone) statDone.textContent = String(done);
+      if (statPct) statPct.textContent = pct + '%';
+
+      const nextLesson = rows.find((r) => r.getAttribute('data-done') !== 'true');
+      const continueBtn = document.getElementById('continue-btn');
+      if (continueBtn && nextLesson) {
+        continueBtn.setAttribute('href', nextLesson.getAttribute('href') ?? '#');
+      }
+    }
+
+    refreshDashboard();
+    window.addEventListener('focus', refreshDashboard);
+  </script>
+</Base>
