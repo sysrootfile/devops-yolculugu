@@ -91,3 +91,18 @@ test('quiz rozeti dashboardda görünür', async ({ page }) => {
   await expect(badge).toHaveText('4/4');
   await expect(badge).toHaveAttribute('data-perfect', 'true');
 });
+
+test('mermaid diyagramı vendor dosyadan render olur', async ({ page }) => {
+  await page.goto(`${BASE}/ders/seviye-0/bu-site-bir-devops-projesi/`);
+  await expect(page.locator('.mermaid-target svg').first()).toBeVisible({ timeout: 10000 });
+});
+
+test('egitmen sayfası tüm cevapları listeler', async ({ page }) => {
+  await page.goto(`${BASE}/egitmen/`);
+  await expect(page.locator('.quiz-block').first()).toBeVisible();
+  const blocks = await page.locator('.quiz-block').count();
+  expect(blocks).toBeGreaterThan(50);
+  const answers = await page.locator('.qa').count();
+  expect(answers).toBeGreaterThan(200);
+  await expect(page.locator('.qa').first()).toContainText('✓');
+});

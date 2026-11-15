@@ -44,6 +44,8 @@ const fullTitle = title ? `${title} · ${SITE.name}` : SITE.name;
     <footer class="site-footer">
       <p>
         {SITE.name} — interaktif öğrenme reposu ·
+        <a href={withBase('/sozluk/')}>📚 Sözlük</a> ·
+        <a href={withBase('/egitmen/')} title="Eğitmenler için cevap anahtarı">🎓 Eğitmen Cevapları</a> ·
         <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> ile üretildi ·
         <a href="https://github.com/features/actions" target="_blank" rel="noopener">GitHub Actions</a>
         ile derleniyor

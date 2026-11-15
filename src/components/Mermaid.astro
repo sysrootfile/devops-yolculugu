@@ -23,13 +23,28 @@ const { chart, caption } = Astro.props;
 
   let mermaidPromise: Promise<MermaidAPI> | null = null;
 
+  const BASE = import.meta.env.BASE_URL.replace(/\/+$/, '');
+
   function loadMermaid(): Promise<MermaidAPI> {
     if (!mermaidPromise) {
-      mermaidPromise = import(
-        /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
-      ).then((mod: any) => {
-        const m = (mod.default ?? mod) as MermaidAPI;
-        return m;
+      mermaidPromise = new Promise((resolve, reject) => {
+        // 1) Önce repodaki vendor kopyası — çevrimdışı/baskı güvenli, CDN bağımsız
+        const s = document.createElement('script');
+        s.src = `${BASE}/vendor/mermaid.min.js`;
+        s.onload = () => {
+          const m = (window as any).mermaid as MermaidAPI | undefined;
+          if (m) resolve(m);
+          else reject(new Error('vendor mermaid yükendi ama global yok'));
+        };
+        s.onerror = () => {
+          // 2) Vendor yoksa CDN'den ESM dene
+          import(
+            /* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs'
+          )
+            .then((mod: any) => resolve((mod.default ?? mod) as MermaidAPI))
+            .catch(reject);
+        };
+        document.head.appendChild(s);
       });
     }
     return mermaidPromise;
