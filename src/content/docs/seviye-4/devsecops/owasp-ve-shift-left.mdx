@@ -51,6 +51,15 @@ Geleneksel model güvenliği **sonuna** bırakır (penetrasyon testi, release ö
 | **SCA** | Bağımlılık kuruluk taraması | CI'da | Trivy, Dependabot (önceki ders) |
 | **Secret scan** | Sızan kimlik avı | Pre-commit + CI | gitleaks (önceki ders) |
 
+<Callout type="info" title="Gerçek dünyadan: Equifax (2017) — yamalanmamış bir CVE'nin bedeli">
+  2017'de Equifax, aylar önce açıklanmış ve yaması çıkmış bir Apache Struts
+  zafiyetini (CVE-2017-5638) yamalamadı; ihlal ~147 milyon kişinin verisini
+  etkiledi. Zincirin bozuk halkaları tanıdık: eksik envanter (“bu sunucuda hangi
+  sürüm vardı?”), otomatik yama/tarama yoksunluğu ve ihlalin haftalarca fark
+  edilmemesi (monitoring yokluğu). Seviye 4 DevSecOps'un tamamı tek vakada.
+  Detaylı analizi Seviye 5 arşivinde.
+</Callout>
+
 PR'da Semgrep örneği:
 
 ```yaml

@@ -62,6 +62,16 @@ Seviye belirsizse **bir üstten başla** — yüksekten düşürmek kolaydır; t
 
 Sabitleyici bir yayın takvimi, kaosu durdurur: SEV-1'de **her 30 dakikada** durum güncellemesi (ne biliyoruz / ne yapıyoruz / ne zaman sonraki güncelleme). Bilinmiyorsa “bilmiyoruz, X'i test ediyoruz” **iyi** bir güncellemedir — sessizlik, herkesi kötüleştirmiş sayılan olaylara iter.
 
+<Callout type="info" title="Gerçek dünyadan: GitHub, Ekim 2018 — 24 saatin gerçeği">
+  GitHub, ABD doğu kıyısındaki bir ağ bölünmesi sonrası 24 saatten uzun süre
+  kısıtlı hizmet verdi: MySQL failover zinciri, veri tutarlılığı ve orkestrasyon
+  araçlarının kendisinin de etkilenmesi olayı uzattı. GitHub, olaydan sonra dakika
+  dakika ayrıntılı postmortem yayınladı — bugün incident yönetimi eğitimlerinin
+  standart okumasıdır. Çıkarımlar bu dersteki iki ilkeyle birebir örtüşür: koordinasyon
+  rolü şart (IC) ve “mitigate-first” — kök nedeni ararken kullanıcı etkisini
+  uzatmamak.
+</Callout>
+
 ## On-call sürdürülebilirliği
 
 On-call bir cezalandırma değil, **sistem**dir:

@@ -34,6 +34,14 @@ Seviye 3'te deploy'u elle `kubectl apply` ile yaptık. Bu modelin üç kötülü
 3. **Sürekli eşitleme:** bir operator Git'teki hâli kümeye sürekli uygular
 4. **Sürekli ölçüm:** drift (sapma) otomatik tespit edilir ve düzeltilir/raporlanır
 
+<Callout type="info" title="Gerçek dünyadan: terimin kaynağı ve benimsemesi">
+  “GitOps” terimi **Weaveworks** tarafından 2017'de ortaya kondu; bugün ArgoCD ve
+  Flux CNCF projeleri olarak endüstri standardıdır. Benimseme, teoriden değil
+  ihtiyaçtan geldi: çoklu küme yöneten ekipler, “kümeye kim neyi ne zaman apply
+  etti?” sorusunun cevabını elle yanıtlamaktan yorulmuştu — Git log'u bu sorunun
+  ucuz ve kesin cevabı oldu.
+</Callout>
+
 ## Push vs Pull: güvenlik devrimi
 
 ```mermaid

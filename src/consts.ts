@@ -88,6 +88,7 @@ export const MODULES: ModuleMeta[] = [
   { id: 'sre', level: 4, name: 'SRE Pratikleri', description: 'SLO’lar, error budget, incident yönetimi ve postmortem kültürü' },
   { id: 'devsecops', level: 4, name: 'DevSecOps', description: 'Secret yönetimi, supply chain güvenliği ve shift-left' },
   { id: 'gitops', level: 5, name: 'GitOps & İleri Desenler', description: 'ArgoCD/Flux, blue-green/canary ve platform engineering' },
+  { id: 'sektorel', level: 5, name: 'Sektörel Pratikler', description: 'DevOps’un finans, sağlık, e-ticaret ve oyun dünyasındaki gerçek halleri' },
   { id: 'capstone', level: 5, name: 'Capstone', description: 'Öğrendiklerini bu siteyi uçtan uca prod’a taşıyarak kanıtla' },
 ];
 

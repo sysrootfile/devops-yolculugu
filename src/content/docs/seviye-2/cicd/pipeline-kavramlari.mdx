@@ -65,6 +65,15 @@ Pipeline'ın hızının sırrı, kodun değil **değişikliklerin** boyutundadı
 
 DORA metriklerinden **lead time** (commit → prod) tam olarak bu zincirin süresini ölçer. Elit ekipler: bir günden az.
 
+<Callout type="info" title="Gerçek dünyadan: Amazon, 2011 — “11.6 saniyede bir deploy”">
+  Amazon mühendisi Jon Jenkins, Velocity 2011 konuşmasında şirketin iç ölçümlerini
+  paylaştı: yoğun dönemde ortalama **11.6 saniyede bir** production deploy ve
+  en kötü kesinti için “fly-by-night” hedefi — yani tek bir deploy’un ortalama
+  müşteri etkisinin neredeyse sıfır olması. Bu rakam bir rekor değil, **küçük parça
+  prensibinin** matematiksel sonucudur: deploy ne kadar küçükse, hatanın etkisi ve
+  geri dönüşü o kadar küçüktür.
+</Callout>
+
 ## Darboğazları bulmak
 
 Lean ilkesi (Seviye 0): sistemin hızı, **en yavaş adımın** hızıdır. Pipeline'ında darboğazı bulmak için adım sürelerini izle:

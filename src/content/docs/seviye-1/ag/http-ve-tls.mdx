@@ -85,6 +85,14 @@ app.example.com sertifikası
 
 **Root CA'lar** tarayıcı/OS içinde hazır gelir. Sertifikayı Let's Encrypt gibi bir CA imzalar. **Sertifika süresi** klasik olay kaynağıdır: süresi biten sertifika = tüm dünyada `SEC_ERROR_EXPIRED`. Çözüm: otomatik yenileme (Let's Encrypt + `certbot`, 90 günlük sertifikalar).
 
+<Callout type="info" title="Gerçek dünyadan: tek süresi dolan sertifika, iki kıta">
+  Aralık 2018'de bir Ericsson sertifikasının süresi dolunca İngiltere'de O2 ve
+  Japonya'da SoftBank ağlarında milyonlarca kullanıcı internete bağlanamadı — mobil
+  operatörlerin altyapısındaki bir bileşen, süresi dolan tek sertifikaya bağımlıydı.
+  “Sertifika yenileme otomasyonu” bu derste öğrendiğin küçük bir pratik gibi görünse
+  de, operatör ölçeğinde ulusal kesinti önleyicidir.
+</Callout>
+
 ### TLS el sıkışması (basitleştirilmiş)
 
 ```mermaid

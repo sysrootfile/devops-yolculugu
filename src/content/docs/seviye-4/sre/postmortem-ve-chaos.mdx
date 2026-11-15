@@ -78,6 +78,15 @@ flowchart LR
     L -->|hayır| F["Zayıflık bulundu!<br/>bug/bağımlılık düzelt"]
 ```
 
+<Callout type="info" title="Gerçek dünyadan: Chaos Monkey'in doğuşu (2010-2011)">
+  Netflix, AWS'in 2010-2011'deki kesintilerinden çıkan dersi şuydu: “bulutta koşan
+  her şey er geç düşer — geride kalan soru, düşerken ne olacağıdır.” Cevap
+  **Chaos Monkey** oldu: iş saatleri içinde, rastgele üretim instance'larını
+  kapatan bir araç. Başlangıçta radikal görünen bu fikir, “güvenilirlik provasız
+  kazanılamaz” tezinin endüstri standardı haline geldi. GitLab'ın 2017 canlı
+  postmortem'ı da şeffaf öğrenmenin kültür tarafındaki eşdeğeridir.
+</Callout>
+
 Klasik araçlar: **Chaos Mesh, Litmus, AWS FIS**. Deneyler için üç altın kural:
 
 1. **Staging'de başla**, prod'a yalnızca ölçüm rehberliğinde ve küçük dozda git

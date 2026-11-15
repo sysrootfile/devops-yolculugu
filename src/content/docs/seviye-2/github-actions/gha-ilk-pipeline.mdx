@@ -129,6 +129,14 @@ Son step'te çok satırlı bir script görüyorsun (`run: |`): her satır ayrı 
   satırı işaret eder.
 </Callout>
 
+<Callout type="info" title="Gerçek dünyadan: bu reponun kendi CI'ında yaşandı">
+  Bu siteye kurduğumuz pipeline'da GitHub bir gün şu annotation'ı düşürdü:
+  “actions/checkout@v4, Node.js 20 deprecated...” — yani bağımlılık değil,
+  **pipeline'ın kendi bileşenleri de eskir ve bakım ister**. Repoyu v5'e yükseltip
+  ders örneklerini senkronladık. Çıkarım: CI, kurulup unutulacak bir şey değil;
+  kendisi de versiyonlanan, bakılan bir üründür (dogfooding'in ikinci dersi!).
+</Callout>
+
 ## Bundan sonrası
 
 Pipeline artık her değişikliği doğruluyor. Sırada iki güçlendirme var: **secrets** (bir sonraki ders — deploy kimlik bilgileri) ve **cache/artifact** (dersten sonra — hız). Seviye 3'te bu pipeline'ın sonuna Docker imajı üretimini ekleyeceğiz.

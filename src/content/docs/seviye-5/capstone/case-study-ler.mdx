@@ -1,12 +1,13 @@
 ---
 title: 'Gerçek Dünya Case Study’leri'
-description: 'Üç gerçek senaryo: “log diskini doldurdu”, “canary olmasa müşteri kaybı” ve “sızan token” — öğrendiğin her seviyenin sahada nasıl çalıştığı.'
+description: 'Üç gerçek senaryo + belgelenmiş olay arşivi: Knight Capital, AWS S3, GitLab, Cloudflare, Equifax ve Facebook kesintileri — öğrendiğin her seviyenin sahada nasıl çalıştığı.'
 level: 5
 module: 'capstone'
 order: 2
-duration: 20
+duration: 35
 objectives:
   - 'Gerçekçi olay senaryolarını seviye seviye analiz edebilmek'
+  - 'Belgelenmiş gerçek olaylardan (Knight Capital, S3, GitLab, Cloudflare, Equifax, Facebook) kök neden çıkarabilmek'
   - 'Aynı problemi farklı olgunlukta ekiplerin nasıl çözdüğünü karşılaştırabilmek'
   - 'Kendi karar ağacını bu senaryolarla kurabilmek'
 prerequisites:
@@ -58,6 +59,60 @@ import Quiz from '@components/Quiz.astro';
 5. **Olay kültürü** (Seviye 4, postmortem): “geliştiricinin hatası” değil “neden canlı token paylaşılabilecek bir akış vardı?” — süreç sorusu
 
 **Çıkarım:** Güvenlik olaylarının çoğu tek bir insan hatasından doğmaz; hatayı **ölümcül** katan katman eksikliğinden doğar. Katmanlı savunma (defense in depth) bu reponun seviyelerinin tam olarak bu mantığı.
+
+## Arşivden: belgelenmiş gerçek olaylar
+
+Şimdi sahneyi genişletelim. Aşağıdaki altı olay, kamuya açık postmortem/raporlarla belgelenmiştir; her birini **“hangi seviyenin dersi bunu önlerdi?”** sorusuyla oku. Bunlar mülakatlarda anlatılabilecek, belgeye dayalı hikâyelerdir.
+
+### 1. Knight Capital (2012) — 45 dakikada ~440 milyon dolar
+
+**Ne oldu:** ABD borsası açılışında yeni dağıtım kısmen uygulandı: 8 sunucudan yedisine yeni kod kuruldu, **bir sunucu eski kaldı**. O sunucudaki kullanılmayan “Power Peg” test kodu, yeniden kullanılan bir bayrak (flag) ile uyandı ve saniyeler içinde milyonlarca yanlış emir gönderdi.
+
+- **Kök neden:** elle dağıtım + ölü kodun bayrağının yeniden kullanımı + kill switch yok
+- **Karşılığı:** `seviye-2` (otomatik dağıtım — “bir sunucu eski kaldı” senaryosu elle dağıtımın imzasıdır), `seviye-5` (kill switch/deployment desenleri)
+
+### 2. AWS S3 kesintisi (Şubat 2017) — bir yazım hatasının küresel etkisi
+
+**Ne oldu:** Bir SRE, az sayıda sunucuyu kaldırmak için komut çalıştırdı; **yanlış parametre** çok daha büyük bir sunucu setini kaldırdı. S3’ün faturalama ve içerik dizin alt sistemleri haftalarca kapasite azalmıştı (yetkisiz yavaş kaldırım!). Saatler süren kesinti Slack, Netflix, Trello dahil yüzlerce servisi yıktı — çünkü hepsi aynı bölgeye ve aynı depoya bağımlıydı.
+
+- **Kök neden:** tehlikeli komuta karşı koruma yok (remove-tooling), bağımlılık yoğunlaşması
+- **Karşılığı:** `seviye-1` (least privilege — komutun erişim kapsamı), `seviye-4` (bağımlılık envanteri, multi-region dayanıklılık)
+
+### 3. GitLab veri kaybı (Ocak 2017) — altı saatlik veri ve beş başarısız yedek
+
+**Ne oldu:** Yüklenme sorunu yaşayan GitLab’da bir ops mühendisi yanlış sunucuda (primary DB) `rm -rf` çalıştırdı. Restorasyon sürecinde **beş yedekleme yönteminden beşi de** eksik/bozuk çıktı; ~6 saat veri kalıcı kaybedildi. Olay süresince canlı tutulan **Google Doc postmortem** şeffaflığın klasik örneği oldu.
+
+- **Kök neden:** yanlış sunucuda acil işlem + en az yetki yok + test edilmemiş yedekler
+- **Karşılığı:** `seviye-1` (sudo/izinler), `seviye-4` (yedeklerin *restore provası* — “yedek, geri yüklenene dek yedek değildir”), postmortem kültürü
+
+### 4. Cloudflare global kesintisi (Temmuz 2019) — 27 dakika, tek regex
+
+**Ne oldu:** WAF kurallarına eklenen bir regex, kötü durumda **katastrofik geri izleme (catastrophic backtracking)** ile CPU’yu tüketti; tek konfigürasyon tüm dünyadaki kenar sunuculara dakikalar içinde yayıldı. ~27 dakika global kesinti.
+
+- **Kök neden:** kaynak limiti olmayan regex yürütmesi + kademelendirme olmadan global rollout
+- **Karşılığı:** `seviye-2` (kademeli rollout), `seviye-5` (canary — %1 trafikte ölçülseydi etki 100× küçük olurdu), test disiplini
+
+### 5. Equifax veri ihlali (2017) — yamalanmamış bir zafiyet, 147 milyon kişi
+
+**Ne oldu:** Apache Struts’ta açıklanmış bir zafiyet (CVE-2017-5638) için yama **aylarca** uygulanamadı; saldırganlar ihlali kullanarak 147 milyon kişinin verisine ulaştı.
+
+- **Kök neden:** yama yönetimi yok, envanter bilinmiyor, ihlal haftalarca fark edilmedi
+- **Karşılığı:** `seviye-4` (SCA/Trivy taraması + “kritik açık pipeline’ı kırar”), envanter (SBOM), `seviye-1` (least privilege — ihlalin yayılmasını sınırlayan katmanlar)
+
+### 6. Facebook kesintisi (Ekim 2021) — BGP çekildi, kapı bile açılmadı
+
+**Ne oldu:** Bakım komutu BGP reklamını geri çekti; **DNS ile birlikte her şey** (dahili araçlar dahil) erişilemez oldu. Veri merkezine giden mühendislerin rozetleri bile ağa bağımlıydı — ~6 saat kesinti.
+
+- **Kök neden:** tek noktaya bağımlı DNS/BGP + çift doğrulama yok + out-of-band yönetim yoksunluğu
+- **Karşılığı:** `seviye-1` (ağ temelleri — DNS/BGP zinciri), `seviye-4` (bağımlılık analizi), acil erişim (break-glass) tasarımı
+
+<Callout type="tip" title="Arşiv okuma alışkanlığı">
+  Bu olayların orijinal postmortem’lerini okumak, bir sürü kurs kitabından daha
+  öğreticidir: AWS S3 (2017), GitLab (2017), Cloudflare (2019), GitHub (2018, 24 saatlik
+  depolama kesintisi) raporları kamuya açıktır. Her postmortem’de üç şeye bak:
+  zaman çizelgesi, kök neden, aksiyon maddeleri — ve “bu üçü bizde var mı?”
+</Callout>
+
 
 ## Ortak ders: olgunluk merdiveni
 
@@ -127,6 +182,30 @@ Bu reponun beş seviyesi tam olarak bu merdivendir. Herhangi bir senaryoyu aldı
       answer: 1,
       explain:
         'Öğrenen sistem, olaydan çıkan aksiyonu uygulayıp (chaos ile prova edip) aynı başarısızlık modunu kapatır.',
+    },
+    {
+      q: 'Knight Capital olayının (2012, ~440M$) doğrudan kök nedeni neydi?',
+      options: [
+        'Bulut faturası aşıldı',
+        'Elle dağıtım sonrası bir sunucunun eski kodla kalması + ölü kodun bayrağının yeniden kullanımı',
+        'DNS kaydının yanlış yönlendirilmesi',
+        'Veritabanı yedeğinin bozuk olması',
+      ],
+      answer: 1,
+      explain:
+        '8 sunucudan 1’i elle dağıtımda atlandı; yeniden kullanılan bayrak, kullanılmayan “Power Peg” test kodunu canlıda çalıştırdı.',
+    },
+    {
+      q: 'Cloudflare 2019 global kesintisi hangi iki eksiğin birleşimiydi?',
+      options: [
+        'Sertifika süresi + DNS TTL',
+        'Kaynak limiti olmayan regex (katastrofik geri izleme) + canary’siz global rollout',
+        'Bellek sızıntısı + disk dolması',
+        'Yanlış IAM politikası + açık bucket',
+      ],
+      answer: 1,
+      explain:
+        'Tek regex CPU’yu tüketti ve konfigürasyon canary olmadan tüm kenarlara dakikalar içinde yayıldı; her ikisi de ayrı ayrı önlenebilirdi.',
     },
   ]}
 />

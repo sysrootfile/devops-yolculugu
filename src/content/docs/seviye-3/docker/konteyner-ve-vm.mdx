@@ -49,6 +49,14 @@ flowchart TB
 
 Container, host'un **çekirdeğini paylaşıp** kendi dosya sistemi ve süreç alanıyla çalışır — bu yüzden hızlı ve hafiftir. Karşılığı izolasyonun biraz daha ince olması (kernel paylaşıldığı için host güvenliği kritik).
 
+<Callout type="info" title="Gerçek dünyadan: Google yıllardır her şeyi container'da koşturur">
+  Kubernetes'in atası olan **Borg**, Google'ın iç sistemlerini on yıllardır
+  container'larla yöneten sistemdir: her şey — arama, Gmail — konteyner olarak
+  paketlenir ve sürekli yeniden planlanır. Kubernetes, bu iç deneyimin açık kaynak
+  versiyonudur. Yani container modeli “yeni bir moda” değil; ölçekli şirketlerin
+  onlarca yıllık kanıtlanmış cevabıdır.
+</Callout>
+
 ## Image: salt okunur şablon
 
 **Image** = çalışan paketin durdurulmuş anı; **container** = o imajın çalışmakta olan kopyası. Bir imajdan istediğin kadar container ayağa kalkar.

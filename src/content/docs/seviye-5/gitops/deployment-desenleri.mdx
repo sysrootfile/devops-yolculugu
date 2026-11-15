@@ -76,6 +76,14 @@ return oldCheckout();
 
 Eksileri unutma: eski/yeni kod **aynı anda yaşamak zorundadır** — kod karmaşası; flag'lerin de ömrü vardır (amaçları bitince **temizlenir**; aksi halde “flag çöplüğü”).
 
+<Callout type="info" title="Gerçek dünyadan: Chrome'un dört kanalı — kademeli release'in somut hali">
+  Google Chrome, her sürümü **Canary → Dev → Beta → Stable** kanallarından geçirir:
+  yeni kod önce gün içinde on binlerce geliştiricinin koştuğu Canary'de, sonra
+  giderek büyüyen kitelerde doğrulanır. Aynı mantığı Gmail'in 2004'teki davetiyeli
+  açılışı da taşır: kapasite ve güven arttıkça kapı açılır. “Canary” kelimesi buradan
+  gelir — maden kanaryası, zehri önce hisseden olandır.
+</Callout>
+
 ## Desen seçimi pragmatiği
 
 - Bu statik site (Seviye 3'te K8s'e taşınmış hali): rolling update yeterli — trafik profili basit

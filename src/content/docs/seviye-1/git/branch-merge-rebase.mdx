@@ -119,6 +119,14 @@ flowchart LR
 
 DevOps perspektifinden: deploy pipeline'ın varsa kısa ömürlü dallar + sık merge idealdir; dal ne kadar uzun yaşarsa, birleştirme acısı o kadar büyür.
 
+<Callout type="info" title="Gerçek dünyadan: Google'ın monorepo'su ve trunk-based gerçekliği">
+  Google, on milyonlarca satırlık **tek bir monorepo**'da çalışır ve trunk-based
+  modelin en olgun uygulayıcılarındandır: dallar saatlerle ölçülen kısa ömürlüdür,
+  tamamlanmamış özellikler feature flag ile gizlenir. Mesaj net: ekip ve otomasyon
+  ölçeği büyüdükçe “uzun yaşayan feature branch” değil, **küçük parça + hızlı
+  doğrulama** modeli sürdürülebilir hale gelir.
+</Callout>
+
 <Quiz
   id="s1-git-branch"
   questions={[

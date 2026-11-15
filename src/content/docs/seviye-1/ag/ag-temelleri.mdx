@@ -74,6 +74,15 @@ DevOps için kritik kayıt türleri:
 
 **TTL (Time To Live):** kaydın kaç saniye önbelleklenip geçerli kaldığı. Deploy derslerinde klasik olay: “DNS değiştirdim ama hâlâ eski IP'ye gidiyor” → TTL beklenmedi.
 
+<Callout type="info" title="Gerçek dünyadan: Facebook (2021) — DNS her şeydi">
+  Ekim 2021'de Facebook/Instagram/WhatsApp ~6 saat erişilemez oldu: bir bakım komutu
+  BGP reklamını geri çekti, DNS ile birlikte **her şey** çözülemez hale geldi —
+  dahili araçlar ve kapı rozetleri bile ağa bağımlı olduğu için mühendislerin veri
+  merkezine fiziksel gitmesi gerekti. Tek bir bağımlılık noktasının, milyarlarca
+  kullanıcılı şirketi nasıl durdurabildiğinin en çarpıcı örneği. Tam vaka Seviye 5
+  arşivinde.
+</Callout>
+
 ## Portlar: aynı IP'de binlerce kapı
 
 IP makineyi bulur; **port** makinedeki doğru programı bulur. `IP:port` çifti = adres + daire numarası.

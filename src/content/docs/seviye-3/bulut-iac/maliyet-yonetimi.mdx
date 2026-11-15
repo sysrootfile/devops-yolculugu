@@ -71,6 +71,15 @@ Geliştirme ortamı gece kapanır sabah açılır (scheduler) — %60+ tasarruf 
 - **Serverless:** boşta maliyeti sıfır — seyrek tetiklenen işler için
 - **Managed servis tekrar kontrolü:** RDS mi, kendi EC2'de Postgres mi? Operasyon maliyeti + güvenlik dahil hesaplanır
 
+<Callout type="info" title="Gerçek dünyadan: Stack Overflow'un bulut dönüşü (2022)">
+  Stack Overflow, altyapısını buluttan **kendi veri merkezine** taşıma kararını
+  2022'de ayrıntılarıyla yayınladı: sabit, öngörülebilir ve yüksek temel yükleri
+  için kendi donanımı, bulut maliyetlerinin ciddi oranda altında çıktı. Ders
+  “bulut kötüdür” değil — **doğru yük profili için doğru model seçilmelidir**:
+  değişken trafik buluta, sabit ve büyük temel yük dengeli bir on-prem/hibrit
+  kararı olabilir.
+</Callout>
+
 ### 5. Sürekli bakım
 
 ```bash

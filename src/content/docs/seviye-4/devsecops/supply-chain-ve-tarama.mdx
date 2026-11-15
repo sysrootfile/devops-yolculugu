@@ -37,6 +37,16 @@ Tarihsel saldırı sınıfları:
 - **Compromised maintainer:** meşru paketin hesabının ele geçirilip zararlı sürüm yayınlanması (real-world: `event-stream`, `ua-parser-js` olayları)
 - **Hijacked CI:** “npm ci” sırasında postinstall script'leri
 
+<Callout type="info" title="Gerçek dünyadan: SolarWinds (2020) ve event-stream (2018)">
+  SolarWinds saldırısı (2020), bir yazılım tedarikçisinin **build sistemine** sızan
+  saldırganların, binlerce kuruma giden meşru görünen güncellemelere zararlı kod
+  koyduğu (bildirilen on binlerce müşteri etkilenen) endüstriyi değiştiren vakadır.
+  Bireysel geliştirici ölçeğindeki karşılığı ise event-stream (2018): bakımcısı
+  projeyi devreden çıkardı, yeni sürüm zararlıydı ve React dahil geniş bir ekosistem
+  etkilendi. İkisinin ortak cevabı bu dersin katmanları: SBOM, tarama, imza ve
+  “güncelleme de bir deployment'tır” disiplini.
+</Callout>
+
 ## Savunma katmanları
 
 ### 1. SBOM: ne var nerede?

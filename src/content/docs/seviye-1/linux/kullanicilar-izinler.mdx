@@ -114,6 +114,14 @@ Neden her zaman root ile çalışılmaz? Çünkü **en az yetki ilkesi (least pr
 - **CI runner'lar** “secret'ları kim görebilir?” sorusunu izin mantığıyla cevaplar (Seviye 2).
 - Incident'lerin klasik kaynağı: “yanlış klasörde 777 verilmişti”.
 
+<Callout type="info" title="Gerçek dünyadan: Capital One (2019) — aşırı yetkili rolün bedeli">
+  2019'da bir saldırgan, yanlış yapılandırılmış bir WAF üzerinden SSRF ile EC2
+  metadata servisine ulaştı ve makinedeki **aşırı yetkili IAM rolünü** kullanarak
+  yüz milyon kişilik veriye erişti. Zafiyet zincirinde en kritik halka, seviye
+  ayrımının yapılmamıştı: “bu makine neden TÜM depoyu okuyabiliyor?” En az yetki
+  ilkesi burada soyut bir prensip değil, somut hasar sınırlandırıcısıdır.
+</Callout>
+
 <Quiz
   id="s1-linux-izinler"
   questions={[

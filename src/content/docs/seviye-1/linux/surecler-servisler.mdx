@@ -121,6 +121,15 @@ tail -100 /var/log/syslog         # son 100 satır
 
 Bu mini senaryo gerçek bir **incident** akışını modelledi: semptom → status → log → kök neden (port çakışması) → aksiyon → doğrulama. Seviye 4’te bu akışı SRE disipliniyle (incident management) formalize edeceğiz.
 
+<Callout type="info" title="Gerçek dünyadan: “log/disk dolu” masum görünmez">
+  GitLab’ın 2017’deki büyük veri kaybı olayı bir disk doluluk sorununu çözerken
+  başladı: yorgun bir mühendis yanlış sunucuda (primary veritabanı!) `rm -rf`
+  çalıştırdı ve yedekler de çalısmayınca saatlerce veri kaybedildi. Yani bu derste
+  öğrendiğin akış (status → log → kök neden) gerçek hayatta hayati; ama tek başına
+  yetmez — izinler (least privilege) ve prova edilmiş yedekler katmanları da şart.
+  Tam vaka Seviye 5 arşivinde.
+</Callout>
+
 ## Süreç yönetiminin DevOps bağlantısı
 
 - **Monitoring** (Seviye 4) aslında `ps`/`top`un sürekli ve otomatik halidir.

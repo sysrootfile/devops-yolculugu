@@ -94,6 +94,15 @@ curl -fsS https://ornek.com | grep -q "DevOps Yolculuğu"    # içerik kontrolü
 
 İkisi de script'te `exit 1` ile bağlıysa: boş ya da hatalı deploy, pipeline'ı kırmızı yapar ve seni gece 3'te kullanıcı SMS'iyle değil, CI mailiyle uyandırır. Bu, Seviye 4'te kuracağımız monitoring'in CI içindeki mikro versiyonudur.
 
+<Callout type="info" title="Gerçek dünyadan: Netflix red/black, Facebook dark launch">
+  Netflix, deploy'larını **red/black** (blue-green'in kardeşi) ile yapar: yeni
+  sürüm (red) trafiği kademeli alır, sorun olursa switch geri çevrilir — Spinnaker
+  bu deseni otomatikleştirdi. Facebook ise chat özelliğini 2009'da **dark launch**
+  ile açtı: özellik gerçek üretim trafiği altında, kullanıcılara görünmeden
+  saatlerce koştu. İkisinin ortak paydası: **deploy ≠ release** ayrımını makinelerle
+  değil, süreçle garanti etmek.
+</Callout>
+
 ## Rollback: geri dönüş planı önceden
 
 Deploy stratejisinin sorusu yalnızca “nasıl çıkar?” değil, “nasıl dönerim?”dir:
