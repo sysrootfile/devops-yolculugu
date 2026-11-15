@@ -51,3 +51,12 @@ test('tamamlama butonu ilerlemeyi kaydeder', async ({ page }) => {
   expect(done).toBe('1');
   await expect(page.locator('div.complete-row .complete-btn')).toHaveText('✓ Tamamlandı');
 });
+
+test('içindekiler listesi görünür ve linklidir', async ({ page }) => {
+  await page.goto(`${BASE}/ders/seviye-0/devops-nedir/`);
+  const tocLinks = page.locator('.toc a');
+  const count = await tocLinks.count();
+  expect(count).toBeGreaterThanOrEqual(3);
+  const firstHref = await tocLinks.first().getAttribute('href');
+  expect(firstHref).toMatch(/^#/);
+});

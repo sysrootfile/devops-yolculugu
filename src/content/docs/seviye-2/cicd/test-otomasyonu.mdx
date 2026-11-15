@@ -65,6 +65,16 @@ npm run build   # başarısız MDX, bozuk import, eksik bileşen = kırmızı
 
 Playwright ile: “ana sayfayı aç → Seviye 1'e tıkla → quiz cevapla → doğru skor kaydedildi mi?” Bu test, tarayıcıdaki interaktif bileşenlerin (quiz, terminal) gerçekten çalıştığını doğrular.
 
+<Callout type="info" title="Gerçek dünyadan (bu repo): E2E katmanı da canlı">
+  Hayali örnek kalmadı — bu repoda `tests/e2e/site.spec.ts` altında 6 Playwright
+  testi koşuyor: dashboard yüklemesi, quiz cevaplama, tema kalıcılığı, arama,
+  terminal simülatörü, tamamlama butonu. CI'da bunlar **ayrı bir `e2e` job'ıdır**
+  (build → e2e → docker → deploy). Ve ilk koşumunun meyvesi: arama sonuç
+  panelinin DOM'da var olup **hiç görünmediği** bir CSS bug'ını yakaladı —
+  DOM-level testler göremezdi, E2E görünürlüğü doğruladı. Piramidin katmanları
+  farklı şeyleri korur; biri diğerinin yerine geçmez.
+</Callout>
+
 ## Hangi değişiklik hangi testi tetikler?
 
 Ekipte “test stratejisi” diyince konuşulan tablodur:

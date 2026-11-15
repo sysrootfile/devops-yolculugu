@@ -1,4 +1,5 @@
 ---
+import { render } from 'astro:content';
 import Base from './Base.astro';
 import Sidebar from '@components/Sidebar.astro';
 import CompleteRow from '@components/CompleteRow.astro';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
 const vm = toVM(entry);
 const docs = await getAllDocs();
 const { prev, next } = getNeighbors(docs, entry.id);
@@ -17,6 +19,7 @@ const level = levelById(entry.data.level);
 const moduleMeta = moduleById(entry.data.module);
 const totalLessons = sortLessons(docs).length;
 const lessonIndex = sortLessons(docs).findIndex((d) => d.id === entry.id) + 1;
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
 
 <Base title={vm.title} description={vm.description}>
@@ -57,8 +60,23 @@ const lessonIndex = sortLessons(docs).findIndex((d) => d.id === entry.id) + 1;
           )
         }
 
+        {
+          toc.length >= 3 && (
+            <nav class="toc" aria-label="İçindekiler">
+              <h2>📑 İçindekiler</h2>
+              <ul>
+                {toc.map((h) => (
+                  <li class:list={[`toc-d${h.depth}`]}>
+                    <a href={`#${h.slug}`}>{h.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        }
+
         <div class="prose">
-          <slot />
+          <Content />
         </div>
 
         <CompleteRow lessonId={vm.id} />

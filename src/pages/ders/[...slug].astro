@@ -1,5 +1,5 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import Lesson from '@layouts/Lesson.astro';
 
 export async function getStaticPaths() {
@@ -11,9 +11,6 @@ export async function getStaticPaths() {
 }
 
 const { entry } = Astro.props;
-const { Content } = await render(entry);
 ---
 
-<Lesson entry={entry}>
-  <Content />
-</Lesson>
+<Lesson entry={entry} />

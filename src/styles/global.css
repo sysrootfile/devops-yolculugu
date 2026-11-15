@@ -422,6 +422,45 @@ main.content {
   margin: 4px 0;
 }
 
+/* ---------- İçindekiler (TOC) ---------- */
+.toc {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 20px 12px;
+  margin: 0 0 28px;
+  box-shadow: var(--shadow);
+  max-width: 780px;
+}
+.toc h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+}
+.toc ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.toc li {
+  margin: 3px 0;
+}
+.toc a {
+  color: var(--text-soft);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.toc a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+.toc .toc-d3 {
+  padding-left: 18px;
+  font-size: 0.95em;
+}
+
 /* ---------- Makale tipografisi ---------- */
 .prose {
   max-width: 780px;
