@@ -8,10 +8,14 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "test": "node scripts/validate-content.mjs"
+    "test": "node scripts/validate-content.mjs",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.0",
     "astro": "^6.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
   }
 }

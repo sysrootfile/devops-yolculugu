@@ -1,0 +1,126 @@
+---
+title: '🎯 Seviye 5 Özeti ve Yolculuğun Sonu'
+description: 'Ustalık seviyesinin özeti: GitOps, deployment desenleri, platform engineering, sektörler, AI ve gerçek olay arşivi — final checkpoint.'
+level: 5
+module: 'capstone'
+order: 4
+duration: 20
+objectives:
+  - 'Ustalık seviyesi kazanımlarını tek haritada bağlayabilmek'
+  - 'Final checkpoint quiz ile yolculuğu kanıtlamak'
+  - 'Capstone projesine ve sonraki büyüme yollarına geçmek'
+prerequisites:
+  - 'seviye-5/capstone/skill-matrisi-ve-mulakat'
+tags: ['özet', 'checkpoint', 'final']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **GitOps:** Git = istenen hâl; ArgoCD/Flux pull modeliyle sürekli eşitler (drift onarımı, `git revert` = küme rollback) — repoda kind kümesine gerçek ArgoCD lab’ı var
+- **Deployment desenleri:** deploy ≠ release; blue-green (anlık switch), canary (ölçülü dilim), feature flag (kill switch); DB şemalarında expand–migrate–contract
+- **Platform engineering:** golden path, adoption metriği, Backstage — platform bir üründür
+- **Sektörel pratikler:** finans/sağlık/kamuda compliance as code; e-ticaret/oyun/medyada degradasyon merdiveni ve game day; AI’nin dört katmanı ve sağlam kullanım kuralları
+- **Gerçek olay arşivi:** Knight Capital, AWS S3, GitLab, Cloudflare, Equifax, Facebook — her biri “hangi seviye bunu önlerdi?” sorusuyla okunur
+- **Capstone:** CI → imaj → GitOps → küme → SLO’lu monitoring; dört dayanıklılık provasıyla kanıtlanmış production
+
+<Callout type="tip" title="Yolculuğun tek cümlelik özeti">
+  Kültür: sen yaz, sen çalıştır, hatadan öğren. Pratik: küçük parçalar, otomatik
+  kapılar, ölçülebilir güvenilirlik. Araç: konuya hizmet eder — bunların hepsi
+  bu sitenin kendi altyapısında kurulmuş haliyle belgeli.
+</Callout>
+
+## Final checkpoint quiz
+
+<Quiz
+  id="s5-ozet"
+  title="Seviye 5 Final Checkpoint"
+  questions={[
+    {
+      q: 'GitOps’ta “OutOfSync” neyi gösterir?',
+      options: [
+        'Uygulama hata veriyor',
+        'Git’teki istenen hâl ile kümenin gerçek hâli farklı — elle müdahale/eksik sync olabilir',
+        'DNS sorunlu',
+        'Image derleniyor',
+      ],
+      answer: 1,
+      explain: 'Operator farkı görünür kılar ve (auto-sync ile) otomatik onarır.',
+    },
+    {
+      q: 'Canary’nin blue-green’e göre en büyük avantajı?',
+      options: [
+        'Daha ucuz donanım',
+        'Etkiyi küçük trafik diliminde ölçerek bozulmayı binde birler seviyesinde tutması',
+        'Rollback imkânsızdır',
+        'DB şemasını otomatik taşır',
+      ],
+      answer: 1,
+      explain: 'Metrik kanıtıyla adım adım genişleme: %5’te yakalanan hata, %100’deki felaket değildir.',
+    },
+    {
+      q: 'Regüle sektörde “compliance as code”un işareti?',
+      options: [
+        'Daha fazla elle form',
+        'Onay/test/deploy kanıtlarının pipeline tarafından otomatik üretilmesi',
+        'Yılda iki release',
+        'Denetçilerin e-posta adresi',
+      ],
+      answer: 1,
+      explain: 'Regülasyon kanıt ister; kanıt, otomasyonun doğal çıktısıdır.',
+    },
+    {
+      q: 'Degradasyon merdiveninin (e-ticaret/game day) temel şartı?',
+      options: [
+        'Zirve gecesinde yazılması',
+        'Basamakların önceden kodlanmış, flag’li ve provası yapılmış olması',
+        'Her zaman tam kapasite',
+        'Hata halinde siteyi kapatmak',
+      ],
+      answer: 1,
+      explain: 'Zirve gecesi karar yazılmaz; önceden yazılmış basamak işaretlenir.',
+    },
+    {
+      q: 'AI çıktısına ekipte doğru tutum?',
+      options: [
+        'Model büyükse doğrudan apply',
+        'Junior mühendis teklifi gibi: review + ikinci kaynak doğrulaması',
+        'Yalnızca gece kullanılır',
+        'Dokümante gerekmez',
+      ],
+      answer: 1,
+      explain: 'Hallüsinasyon config alanında production olayıdır; AI taslak üretir, karar vermez.',
+    },
+    {
+      q: 'Knight Capital (2012) vakasının bu yolculuktaki ana dersi?',
+      options: [
+        'Bulut maliyetleri',
+        'Elle dağıtım + ölü kodun bayrak yeniden kullanımı — otomasyon ve kill switch olmadan ölçek felakete döner',
+        'DNS bağımlılığı',
+        'Sertifika süresi',
+      ],
+      answer: 1,
+      explain: '8 sunucudan 1’i eski kaldı; ~440M$’lık kayıp deployment disiplinin bedelsizliğidir.',
+    },
+  ]}
+/>
+
+## Yolculuğun sonu, pratiğin başlangıcı
+
+<LabBox
+  id="s5-ozet-lab"
+  title="Mezuniyet kontrolü — 60 ders, tek proje"
+  verify={['npm test', 'git log --oneline | wc -l']}
+>
+  - [ ] Tüm seviyelerin checkpoint quiz’lerinde 80%+ skor
+  - [ ] Capstone’un 4 prova tablosu dolu (pod silme, bozuk imaj, revert, ingress kesintisi)
+  - [ ] Beceri matrisinde kendini dürüst işaretledin ve zayıf satırlar için 3 aylık planın var
+  - [ ] Kendi bir projen (portfolyo, araç, bu sitenin bir fork’u) için aynı zinciri kurmaya başladın
+
+Bu reponun kendisi de “mezun oldu”: CI’ı, imajı, deploy’u ve testleri ile
+**kendi Capstone’unun tamamlanmış referans çözümü**. Sıra sende — kendi
+projeni aynı standartlara taşı. 🚀
+</LabBox>

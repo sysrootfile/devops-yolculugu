@@ -1,0 +1,112 @@
+---
+title: '🎯 Seviye 1 Özeti ve Checkpoint'
+description: 'Temeller seviyesinin özeti: Linux, ağ ve Git — üç temel taşın bağlantısı ve seviye çıkış kontrolü.'
+level: 1
+module: 'git'
+order: 4
+duration: 18
+objectives:
+  - 'Linux/ağ/Git kazanımlarını tek haritada bağlayabilmek'
+  - 'Checkpoint quiz ile Seviye 1 pratiğini kanıtlamak'
+  - 'Seviye 2 (otomasyon) için ortam hazır olduğunu göstermek'
+prerequisites:
+  - 'seviye-1/git/git-iyi-pratikler'
+tags: ['özet', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **Linux & Terminal:** her şey bir dosyadır; gezinme + pipe zincirleri (`grep | wc -l`), rwx izinleri (600/644/755), süreçler ve `systemctl status → journalctl` sorun giderme akışı, `set -euo pipefail` ile script disiplini
+- **Ağ:** istek-yanıt zinciri (DNS → TCP → TLS → HTTP), durum kodlarının dili (4xx istemci / 5xx sunucu), SSH anahtar mantığı (600 izin, config, port forwarding), curl ile “ağdan uygulamaya” daraltma
+- **Git:** üç alan (working → staging → repo), merge/rebase ayrımı (paylaşılan dal rebase edilmez), Conventional Commits + Semver, hooks ile kalite kapısı
+
+<Callout type="info" title="Neden bu üçü “temel taş”?">
+  Seviye 2’de yazacağın pipeline aslında: Linux komutları koşar (`npm run build`),
+  ağ üzerinden konuşur (registry, deploy hedefi) ve Git olaylarıyla tetiklenir
+  (push, PR). Bu üçü zayıfsa üstüne kurulan hiçbir katman sağlam durmaz.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s1-ozet"
+  title="Seviye 1 Checkpoint"
+  questions={[
+    {
+      q: 'Servis başlamıyor; ilk bakacağın yer?',
+      options: [
+        'Sunucuyu reboot etmek',
+        'systemctl status + journalctl -u <servis>',
+        'Uygulamayı yeniden yazmak',
+        'DNS’i değiştirmek',
+      ],
+      answer: 1,
+      explain: 'Servise özel loglar kök nedenin en hızlı ipucudur; reboot gizler.',
+    },
+    {
+      q: 'Ping başarılı, port 443 kapalı. Sorun hangi katmanda?',
+      options: [
+        'DNS çözümlemesi',
+        'Firewall / servis (uygulama çalışmıyor ya da port kapalı)',
+        'TLS sertifikası',
+        'Kullanıcı izinleri',
+      ],
+      answer: 1,
+      explain: 'Ağ yolu açık ama port kapalı: transport/uygulama katmanına daralt.',
+    },
+    {
+      q: 'SSH özel anahtarı için doğru izin ve nedeni?',
+      options: [
+        '644 — okunabilir olsun ki yedeklensin',
+        '600 — yalnızca sahibi okuyabilsin; SSH aksi halde anahtarı reddeder',
+        '755 — script gibi çalışsın',
+        '777 — sorun çıkmasın',
+      ],
+      answer: 1,
+      explain: 'Least privilege’in dosya düzeyindeki hali; açık izinli anahtar güvenlik hatasıdır.',
+    },
+    {
+      q: 'Herkese açık dalda yanlış commit’i güvenle geri almak?',
+      options: ['git reset --hard', 'git revert', 'git push --force', 'Dosyaları elle düzeltmek'],
+      answer: 1,
+      explain: 'Revert ters commit ekler; reset geçmişi yeniden yazar ve ekibi bozar.',
+    },
+    {
+      q: 'Conventional Commits’e göre “BREAKING CHANGE” işareti hangi sürüm bileşenini artırır?',
+      options: ['PATCH', 'MINOR', 'MAJOR', 'Sürüm değişmez'],
+      answer: 2,
+      explain: 'Uyumluluğu kıran değişiklik MAJOR; ünlem (!) veya footer ile işaretlenir.',
+    },
+    {
+      q: '“Site açılmıyor” diyen kullanıcıya curl ile başlayan diagnoz sırası?',
+      options: [
+        'Direkt kod yazmaya başlamak',
+        'ping → port kontrolü (nc/ss) → curl -I → uygulama /health',
+        'Sadece tarayıcıyı değiştirmek',
+        'Sadece monitoring dashboard’ına bakmak',
+      ],
+      answer: 1,
+      explain: 'Katman katman daraltma: ağ → transport → HTTP → uygulama içi sağlık.',
+    },
+  ]}
+/>
+
+## Çıkış kapısı: Seviye 2 için hazırlık
+
+<LabBox
+  id="s1-ozet-lab"
+  title="Seviye 1 çıkış kontrolü"
+  verify={['git --version', 'curl --version | head -1', 'git log --oneline | wc -l']}
+>
+  - [ ] Terminalde gezinme + pipe zincirleri akıcı (bkz. terminal simülatörü 8/8)
+  - [ ] Bu repo Git’e bağlı, en az bir branch + merge deneyimin oldu
+  - [ ] Conventional Commits formatında en az bir commit’in var (`feat:`, `fix:`...)
+  - [ ] SSH anahtarı üretip izinlerini doğruladın (600)
+
+Hazırsan: **Seviye 2 — Otomasyon & CI/CD**. Artık elle yaptığın her şeyi
+pipeline’a devretme zamanı. ⚙️
+</LabBox>

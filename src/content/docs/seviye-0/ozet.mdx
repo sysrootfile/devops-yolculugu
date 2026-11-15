@@ -1,0 +1,113 @@
+---
+title: '🎯 Seviye 0 Özeti ve Checkpoint'
+description: 'Yolculuğa Başlangıç seviyesinin özeti: DevOps’un tanımı, kültürü, kariyer yolları ve araç hazırlığın — devam etmeden önceki çıkış kontrolü.'
+level: 0
+module: 'giris'
+order: 6
+duration: 15
+objectives:
+  - 'Seviye 0’ın beş dersini tek haritada bağlayabilmek'
+  - 'Checkpoint quiz ile temel kavramları kanıtlamak'
+  - 'Seviye 1 için araç ve ortam hazırlığını doğrulamak'
+prerequisites: []
+tags: ['özet', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **DevOps nedir:** bir araç değil, “sen yaz, sen çalıştır” diyen bir çalışma biçimi; hedef, Dev–Ops duvarını yıkmak (DORA metrikleri bunu ölçer)
+- **Kültür ve tarihçe:** Waterfall’ın gecikmiş geri bildirimi → Agile’ın deployment darboğazı → 2009 DevOpsDays; CALMS çerçevesi ve blameless postmortem zihniyeti
+- **Kariyer yolları:** DevOps (teslim hattı), SRE (ölçülebilir güvenilirlik), Platform Engineering (self-service ürün) — ortak zemin: Linux + ağ + Git
+- **Bu site bir DevOps projesi:** dersler Content Collections + Zod şemasıyla doğrulanır, CI ile derlenir, Pages’te yayınlanır — dogfooding
+- **Araç kurulum rehberi:** Git, Node, GitHub CLI ve (Windows’ta) WSL2 — her kurulum `--version` ile doğrulanır
+
+<Callout type="tip" title="Bu seviyeden geçiş kriteri">
+  Quiz’de 5/5 yapamadıysan sorun değil — yanlışların açıklamalarını oku, ilgili derse
+  dön. Amaç ezber değil, **yön duygusu**: “DevOps neyi neden değiştirir?” sorusuna
+  kendi cümlelerinle cevap verebilmek.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s0-ozet"
+  title="Seviye 0 Checkpoint"
+  questions={[
+    {
+      q: 'DevOps’un üç ayağı doğru sıralamayla?',
+      options: [
+        'Araçlar → Kültür → Pazarlama',
+        'Kültür → Uygulamalar → Araçlar',
+        'Test → Deploy → Monitoring',
+        'Linux → Docker → Kubernetes',
+      ],
+      answer: 1,
+      explain: 'Sıralama kasıtlıdır: kültürsüz otomasyon, daha hızlı dağıtan bir kaos üretir.',
+    },
+    {
+      q: 'DORA’nın dört metriğinden üçü hangileri?',
+      options: [
+        'CPU, RAM, disk, ağ',
+        'Deployment frequency, lead time, change failure rate, recovery time',
+        'SLO, SLI, SLA, MTTR',
+        'Commits, branches, PRs, stars',
+      ],
+      answer: 1,
+      explain: 'Bu dört ölçü, teslim performansının endüstri standardı göstergeleridir.',
+    },
+    {
+      q: 'SRE ile DevOps arasındaki en ayırt edici fark?',
+      options: [
+        'SRE kod yazmaz',
+        'SRE güvenilirliği SLO/error budget gibi ölçülebilir hedeflerle yönetir',
+        'DevOps yalnızca kültürdür',
+        'Fark yoktur, aynı unvanın iki adı',
+      ],
+      answer: 1,
+      explain: 'SRE, operasyon kararlarını öznel tartışmadan ölçüme bağlar.',
+    },
+    {
+      q: 'Bu sitenin “dogfooding” iddiası neyi gerektirir?',
+      options: [
+        'Derslerin yalnızca Windows’ta çalışması',
+        'Öğrenilen her pratiğin (CI, test, deploy) sitenin kendi altyapısında gerçekten kullanılması',
+        'Her dersin ayrı bir repository olması',
+        'Ücretli araç zorunluluğu',
+      ],
+      answer: 1,
+      explain: 'Reponun CI’ı gerçek: içerik testleri, Docker imajı ve Pages deploy bu sayfayı üreten hattın parçaları.',
+    },
+    {
+      q: 'Kurulum rehberindeki altın kural?',
+      options: [
+        'Kurulum sihirbazının “başarılı” mesajı yeterlidir',
+        'Her kurulum, doğrulama komutunun çıktısıyla kanıtlanır',
+        'Araçlar yalnızca bulutta kurulur',
+        'Sürümler önemli değildir',
+      ],
+      answer: 1,
+      explain: '“Kurdum sanıyorum” ile “--version çıktısını gördüm” arasındaki fark lab’ların yarısıdır.',
+    },
+  ]}
+/>
+
+## Çıkış kapısı: Seviye 1 için hazırlık
+
+<LabBox
+  id="s0-ozet-lab"
+  title="Seviye 1 giriş kontrolü"
+  verify={['git --version', 'node -v']}
+>
+  Seviye 1 terminalin karşısında başlar. Şunlar hazır olmalı:
+
+  - [ ] Bir Linux ortamı (WSL2 / VM / bulut VM) açabiliyorsun
+  - [ ] `git --version` çıktısı görüyorsun
+  - [ ] Bu repo `npm run dev` ile kendi makinende açılıyor (araç rehberindeki tablo tamam)
+  - [ ] Kurulum Rehberi dersini yer imlerine ekledin (Seviye 3’te Docker/kind için döneceksin)
+</LabBox>
+
+Hazırsan: **Seviye 1 — Linux & Terminal** ile terminalin başına geçiyoruz. 🌱

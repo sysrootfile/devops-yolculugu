@@ -1,0 +1,125 @@
+---
+title: '🎯 Seviye 2 Özeti ve Checkpoint'
+description: 'Otomasyon ve CI/CD seviyesinin özeti: pipeline kavramları, GitHub Actions, secrets, cache ve deploy — seviye çıkış kontrolü.'
+level: 2
+module: 'github-actions'
+order: 6
+duration: 18
+objectives:
+  - 'CI/CD kazanımlarını (kavram + gerçek pipeline) tek haritada bağlayabilmek'
+  - 'Checkpoint quiz ile otomasyon bilgisini kanıtlamak'
+  - 'Seviye 3 (konteynerler) için kapıyı açmak'
+prerequisites:
+  - 'seviye-2/github-actions/deploy-stratejileri'
+tags: ['özet', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **Pipeline kavramları:** kalite kapıları (build → test → analiz), CI vs Delivery vs Deployment, küçük parça prensibi, darboğaz teorisi
+- **Test otomasyonu:** piramit (unit çok / E2E az); bu reponun gerçek katmanları — `npm test` (içerik unit testi), `npm run build` (integration), E2E (tarayıcı)
+- **GitHub Actions:** workflow→job→step, tetikleyiciler, `needs` zinciri, matrix; `npm ci` disiplini
+- **Secrets & Environments:** maskelenmiş secret’lar, fork PR’larına erişim yok, production environment onay kapısı
+- **Cache & Artifact:** cache hıza, artifact taşımaya yarar; “build → artifact → deploy” deseni
+- **Deploy stratejileri:** staging/prod ayrımı, smoke test (`curl` doğrulaması), rollback’i deploy’dan önce planlama
+
+<Callout type="info" title="Bu seviyenin kanıtı bu reponun kendi CI’ında">
+  push → **İçerik testleri** (`npm test`) → build → Docker imajı (GHCR) →
+  GitHub Pages deploy. Derslerdeki her kavramın canlı bir örneği Actions
+  sekmesinde koşuyor — öğrenme ve kanıt aynı yerde.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s2-ozet"
+  title="Seviye 2 Checkpoint"
+  questions={[
+    {
+      q: 'Continuous Delivery ile Continuous Deployment arasındaki tek fark?',
+      options: [
+        'Delivery’de test yoktur',
+        'Delivery’de prod için insan onayı vardır; Deployment’ta her şey otomatiktir',
+        'Deployment yalnızca staging’e çıkarır',
+        'Fark yalnızca isimdedir',
+      ],
+      answer: 1,
+      explain: 'Environment onay kapısı (required reviewers) bu ayrımın CI karşılığıdır.',
+    },
+    {
+      q: 'İki job arasında dist/ klasörünü taşımak için doğru araç?',
+      options: [
+        'Aynı workflow’da olmak yeterli',
+        'Artifact yükle/indir (upload/download-artifact)',
+        'Env değişkeni',
+        'Kopyala-yapıştır',
+      ],
+      answer: 1,
+      explain: 'Job’lar izole makinelerde koşar; dosya aktarımı artifact ile yapılır.',
+    },
+    {
+      q: 'Fork’tan gelen PR’lar secret’lara erişebilir mi?',
+      options: [
+        'Evet, hepsine',
+        'Hayır — varsayılan olarak erişemez',
+        'Yalnızca staging secret’larına',
+        'Owner onaylarsa otomatik evet',
+      ],
+      answer: 1,
+      explain: 'Fork PR’larına secret vermek doğrudan bir saldırı vektörüdür; varsayılan kapalıdır.',
+    },
+    {
+      q: 'npm cache anahtarının lockfile hash’i olması neden doğrudur?',
+      options: [
+        'Anahtar kısa olur',
+        'Bağımlılık seti değişmediyse cache geçerli; değiştiyse anahtar otomatik yenilenir',
+        'GitHub zorunlu kılar',
+        'Daha hızlı indirir',
+      ],
+      answer: 1,
+      explain: 'İçerik bazlı anahtar: değişim varsa cache otomatik geçersizleşir, sürüm sürprizi olmaz.',
+    },
+    {
+      q: 'Deploy step’inin sonundaki smoke testin görevi?',
+      options: [
+        'Süre ölçmek',
+        'Sitenin gerçekten çalıştığını doğrulayıp bozuksa pipeline’ı kırmak',
+        'Cache temizlemek',
+        'Domain almak',
+      ],
+      answer: 1,
+      explain: 'Yükleme + doğrulama = deploy; doğrulamasız deploy “yükledim sanıyorum”dur.',
+    },
+    {
+      q: 'Pipeline süresini asıl belirleyen nedir?',
+      options: [
+        'En hızlı adım',
+        'En yavaş adım (darboğaz)',
+        'YAML dosyasının uzunluğu',
+        'Runner markası',
+      ],
+      answer: 1,
+      explain: 'Lean darboğaz teorisi: zincir, en yavaş halkası kadar hızlıdır.',
+    },
+  ]}
+/>
+
+## Çıkış kapısı: Seviye 3 için hazırlık
+
+<LabBox
+  id="s2-ozet-lab"
+  title="Seviye 2 çıkış kontrolü"
+  verify={['gh run list --limit 1']}
+>
+  - [ ] Bu reponun Actions sekmesinde kendi tetiklediğin yeşil bir koşum var
+  - [ ] Bilerek kırmızıya çevirip (ör. hatalı frontmatter) test adımının yakaladığını gördün
+  - [ ] Bir secret ekleyip maskelendiğini log’ta gördün (`***`)
+  - [ ] Conventional commit’lerin Actions listesinde düzgün görünüyor
+
+Hazırsan: **Seviye 3 — Konteynerler & Bulut**. Artık “siteyi derleyen” değil,
+“siteyi çalıştıran” katmana iniyoruz. 📦
+</LabBox>

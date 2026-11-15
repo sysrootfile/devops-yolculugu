@@ -1,0 +1,123 @@
+---
+title: '🎯 Seviye 3 Özeti ve Checkpoint'
+description: 'Konteynerler ve bulut seviyesinin özeti: Docker, Kubernetes, bulut kavramları ve IaC — seviye çıkış kontrolü.'
+level: 3
+module: 'bulut-iac'
+order: 6
+duration: 18
+objectives:
+  - 'Konteyner/orkestrasyon/bulut kazanımlarını tek haritada bağlayabilmek'
+  - 'Checkpoint quiz ile Seviye 3 bilgisini kanıtlamak'
+  - 'Seviye 4 (operasyon) için kapıyı açmak'
+prerequisites:
+  - 'seviye-3/bulut-iac/maliyet-yonetimi'
+tags: ['özet', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **Docker:** container = host kernel paylaşan izolasyon; katman cache’i (manifest önce kopyalanır), multi-stage ile 77MB imaj, registry + sha tag disiplini, compose ile çoklu servis (servis adı = DNS)
+- **Kubernetes:** desired state + kontrol döngüsü (self-healing); Pod/Deployment/Service üçlüsü; rolling update ve `rollout undo`; Ingress (TLS), ConfigMap/Secret, Helm paketleme
+- **Bulut (vendor-neutral):** compute/storage/network/IAM soyutlamaları, shared responsibility, serverless vs CDN vs monolit kararı yük profiline göre
+- **IaC:** Terraform (init→plan→apply, state + lock), Ansible (idempotent playbook’lar), kısa ömürlü ortamlar ve etiketleme ile maliyet kontrolü
+
+<Callout type="info" title="Bu seviyenin kanıtı repoda">
+  `Dockerfile` + `.dockerignore` repoda; CI `docker` job’ı imajı GHCR’a sha etiketiyle
+  gönderiyor. Yani “bu siteyi Dockerize et” lab’ı artık sadece anlatı değil —
+  canlı pipeline’ın bir parçası.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s3-ozet"
+  title="Seviye 3 Checkpoint"
+  questions={[
+    {
+      q: 'Container’ın VM’den temel farkı?',
+      options: [
+        'Daha yavaş başlar',
+        'Host kernel’ini paylaşır, kendi OS’unu yüklemez',
+        'Yalnızca Linux’ta çalışır',
+        'Izolasyon sağlamaz',
+      ],
+      answer: 1,
+      explain: 'OS-düzeyi izolasyon: hafif ve saniyeler içinde başlar.',
+    },
+    {
+      q: 'Dockerfile’da `COPY package*.json` neden `COPY . .`’den önce gelir?',
+      options: [
+        'Docker kuralı gereği',
+        'Kod değişikliği bağımlılık katmanını bozmasın — npm ci cache’ten gelsin',
+        'Dosya boyutu için',
+        'Güvenlik için',
+      ],
+      answer: 1,
+      explain: 'Katman sırası = cache sırası; sık değişen şey en sona konur.',
+    },
+    {
+      q: 'Pod öldüğünde Deployment ne yapar?',
+      options: [
+        'Hiçbir şey — elle restart edilir',
+        'Kontrol döngüsü fark eder, istenen replicas’a tamamlar (self-healing)',
+        'Kümeyi yeniden kurar',
+        'Sadece log tutar',
+      ],
+      answer: 1,
+      explain: 'Deklaratif model: istenen hâl sürekli zorlanır.',
+    },
+    {
+      q: 'Staging’de test edilen imajla prod’a giden imajın aynı olduğunun garantisi?',
+      options: [
+        'Aynı etiket adı (latest)',
+        'Aynı sha256 digest — CI imajı bir kez üretir, registry taşır',
+        'Benzer Dockerfile',
+        'Aynı sunucu',
+      ],
+      answer: 1,
+      explain: 'Digest değiştirilemez; “test edilenle deploy edilen aynıdır” garantisinin temelidir.',
+    },
+    {
+      q: 'terraform plan çıktısında “-/+ replace” gördüğünde ilk refleks?',
+      options: [
+        'Hemen apply',
+        'Okumak — kaynak silinip yeniden oluşturulabilir (downtime/veri riski)',
+        'State’i silmek',
+        'Provider güncellemek',
+      ],
+      answer: 1,
+      explain: 'Replace, recreate demektir; veritabanı gibi kaynaklarda felakete yol açabilir.',
+    },
+    {
+      q: 'Kısa ömürlü (ephemeral) test ortamlarının maliyet mantığı?',
+      options: [
+        'Daha ucuz VM kullanmak',
+        'PR açılırken kur, merge’de destroy — kullanılmayan zaman için ödeme sıfır',
+        'Yıllık reserved instance',
+        'Spot fiyatı beklemek',
+      ],
+      answer: 1,
+      explain: 'IaC ile yıkıp kurmak rutinleşince “pasif maliyet” ortadan kalkar.',
+    },
+  ]}
+/>
+
+## Çıkış kapısı: Seviye 4 için hazırlık
+
+<LabBox
+  id="s3-ozet-lab"
+  title="Seviye 3 çıkış kontrolü"
+  verify={['docker images | grep devops-site', 'kind version']}
+>
+  - [ ] `docker build` ile imaj ürettin ve container içinde site HTTP 200 döndü
+  - [ ] kind kümesi kurup siteyi deploy etmeyi denedin (özet lab’ları)
+  - [ ] Compose ile çoklu servis (site + monitoring) ayağa kaldırdın
+  - [ ] Terraform plan/apply/destroy döngüsünü lokal provider ile yaşadın
+
+Hazırsan: **Seviye 4 — Operasyon & Güven**. Sistem artık “çalışıyor” sorusundan
+“güvenilir mi, ölçülüyor mu, güvenli mi?” sorusuna geçiyor. 🛡️
+</LabBox>

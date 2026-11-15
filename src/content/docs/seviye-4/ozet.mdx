@@ -1,0 +1,112 @@
+---
+title: '🎯 Seviye 4 Özeti ve Checkpoint'
+description: 'Operasyon ve güven seviyesinin özeti: observability, SRE pratikleri ve DevSecOps — seviye çıkış kontrolü.'
+level: 4
+module: 'devsecops'
+order: 4
+duration: 18
+objectives:
+  - 'Observability/SRE/DevSecOps kazanımlarını tek haritada bağlayabilmek'
+  - 'Checkpoint quiz ile operasyon bilgisini kanıtlamak'
+  - 'Seviye 5 (ustalık) için kapıyı açmak'
+prerequisites:
+  - 'seviye-4/devsecops/owasp-ve-shift-left'
+tags: ['özet', 'checkpoint']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+import LabBox from '@components/LabBox.astro';
+
+## Özet haritası
+
+- **Observability:** log/metric/trace üçlüsü + golden sinyaller; monitoring vs observability (yeni soru sorabilme); Prometheus pull modeli, PromQL rate kalıbı, semptom-bazlı alarm; blackbox ile dışarıdan uptime
+- **SRE:** SLI→SLO→SLA; error budget = risk sermayesi (tükendiğinde feature durur); incident rolleri (IC koordinasyonu) + mitigate-first; blameless postmortem + aksiyon kapanması; chaos = hipotez + abort düğmesi
+- **DevSecOps:** secret yaşam döngüsü (rotasyon, merkezi kasa), supply chain (SBOM, Trivy, gitleaks, SolarWinds dersi), shift-left (SAST/DAST, Equifax dersi), OWASP sınıflarının altyapı karşılıkları
+
+<Callout type="info" title="Bu seviyenin tek cümlelik özeti">
+  “Kanıt olmadan çalışma sayılmaz”: güvenilirlik ölçülür (SLO), olaylar öğrenmeye
+  dönüşür (postmortem), güvenlik hattın başına taşınır (shift-left) ve her iddia
+  bir metrikle desteklenir.
+</Callout>
+
+## Checkpoint quiz
+
+<Quiz
+  id="s4-ozet"
+  title="Seviye 4 Checkpoint"
+  questions={[
+    {
+      q: '“p99 yükseldi — hangi mikroservis?” sorusuna en doğrudan cevap veren sinyal?',
+      options: ['Log', 'Metric', 'Trace', 'Uptime check'],
+      answer: 2,
+      explain: 'Trace, isteğin atlamalarını süreleriyle gösterir; yavaş span tek bakışta görünür.',
+    },
+    {
+      q: '%99.5 SLO’da 30 günlük error budget yaklaşık kaç dakikadır?',
+      options: ['~36', '~216', '~43', '4300'],
+      answer: 1,
+      explain: '43.200 dk × %0.5 ≈ 216 dk — risk sermayesinin ölçüsü.',
+    },
+    {
+      q: 'SEV-1’de IC’nin asıl işi?',
+      options: [
+        'Konsolda çözüm uygulamak',
+        'Koordinasyon: karar, görev dağılımı, kayıt — müdahale eller ayrıdır',
+        'Müşteriye tek tek yazmak',
+        'SLO raporu hazırlamak',
+      ],
+      answer: 1,
+      explain: 'Koordinasyon boşluğu, teknik çözümden daha çok zaman kaybettirir.',
+    },
+    {
+      q: 'Mitigate-first ilkesine göre olay anında ilk aksiyon?',
+      options: [
+        'Kök neden analizine başlamak',
+        'Kullanıcı etkisini kesmek (rollback/flag); kök neden olaydan sonra',
+        'Postmortem yazmak',
+        'Monitoring kurmak',
+      ],
+      answer: 1,
+      explain: 'Etkilenen müşteri süresi en pahalı kaynaktır.',
+    },
+    {
+      q: 'Sızan bir token için doğru müdahale sırası?',
+      options: [
+        'Geçmişi force-push’la temizle → bekle',
+        'Revoke → yeni üret → dağıt → tarama + olay kaydı',
+        'Repo’yu silmek',
+        'CI’ı durdurmak',
+      ],
+      answer: 1,
+      explain: 'Revoke asıl kapatıcıdır; geçmiş temizliği tamamlayıcıdır.',
+    },
+    {
+      q: 'Chaos deneyinin vazgeçilmez üç bileşeni?',
+      options: [
+        'Büyük ekip + bütçe + süre',
+        'Hipotez + ölçüm (SLO) + abort düğmesi',
+        'Production + gece vakti + sürpriz',
+        'Yalnızca staging + rapor',
+      ],
+      answer: 1,
+      explain: 'Ölçmediğin sistemin dayanıklılığını ölçemezsin; iptal düğmesi olmayan deney incident’tir.',
+    },
+  ]}
+/>
+
+## Çıkış kapısı: Seviye 5 için hazırlık
+
+<LabBox
+  id="s4-ozet-lab"
+  title="Seviye 4 çıkış kontrolü"
+  verify={['docker compose ps | grep prometheus || echo "compose yığınını kur"']}
+>
+  - [ ] Prometheus/Grafana yığını compose ile ayağa kalktı, target’lar UP
+  - [ ] `docker compose stop site` provasında SiteDown alarmı FIRING gördün
+  - [ ] Bir postmortem taslağı yazdın (gerçek ya da simülasyon olayı) — aksiyon satırlarıyla
+  - [ ] Trivy/gitleaks’i en az bir kez kendi projesinde koşturdun
+
+Hazırsan: **Seviye 5 — Ustalık & Capstone**. Artık parçaları bir sisteme
+bağlama ve sektör ölçeğinde düşünme zamanı. 🏆
+</LabBox>

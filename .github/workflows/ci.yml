@@ -70,6 +70,31 @@ jobs:
         name: GitHub Pages'e dağıt
         uses: actions/deploy-pages@v4
 
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v5
+
+      - name: Node kur
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Bağımlılıkları kur
+        run: npm ci
+
+      - name: Chromium kur
+        run: npx playwright install chromium --with-deps
+
+      - name: Siteyi derle
+        run: npm run build
+
+      - name: E2E testleri
+        run: npx playwright test
+
   docker:
     needs: build
     if: github.ref == 'refs/heads/main'

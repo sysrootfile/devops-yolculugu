@@ -10,7 +10,7 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 
 ## ✨ Özellikler
 
-- **6 seviye · 15 modül · 54 ders** — Linux'tan GitOps'a, sektör pratiklerine kadar tam müfredat
+- **6 seviye · 15 modül · 60 ders** — Linux'tan GitOps'a, sektör pratiklerine kadar tam müfredat
 - 🧠 Her derste **quiz** — anlık geri bildirim, skor localStorage'da saklanır
 - 💻 Tarayıcıda çalışan **terminal simülatörü** — komutları güvenle dene
 - 🧪 Adım adım **lab kutuları** — kendi makinende uygula, doğrula, işaretle
@@ -32,10 +32,12 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 ## 🚀 Kurulum
 
 ```bash
-npm install     # bağımlılıklar (Node 22+ gerekir)
-npm run dev     # geliştirme sunucusu → http://localhost:4321/devops-yolculugu/
-npm run build   # statik siteyi dist/ klasörüne üret
-npm run preview # build çıktısını önizle (aynı alt yol ile)
+npm install        # bağımlılıklar (Node 22+ gerekir)
+npm run dev        # geliştirme sunucusu → http://localhost:4321/devops-yolculugu/
+npm run build      # statik siteyi dist/ klasörüne üret
+npm run preview    # build çıktısını önizle (aynı alt yol ile)
+npm test           # içerik testleri (şema, id çakışmaları, prerequisites)
+npm run test:e2e   # Playwright E2E (tarayıcı: npx playwright install chromium)
 ```
 
 > **Not:** Site GitHub Pages proje sitesi olarak `/devops-yolculugu/` alt yolunda
