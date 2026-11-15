@@ -71,3 +71,12 @@ test('sözlük sayfası filtrelenir', async ({ page }) => {
   expect(visible).toBeLessThan(total);
   await expect(page.locator('.gl-item:visible').first()).toContainText(/Argo/i);
 });
+
+test('sözlük terimleri derslerde otomatik linklenir', async ({ page }) => {
+  await page.goto(`${BASE}/ders/seviye-0/devops-nedir/`);
+  const glLink = page.locator('.prose a[href*="/sozluk/#term-"]').first();
+  await expect(glLink).toBeVisible();
+  // hover tooltip = tanım
+  const title = await glLink.getAttribute('title');
+  expect(title?.length ?? 0).toBeGreaterThan(10);
+});

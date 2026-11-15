@@ -41,3 +41,13 @@ export function getGlossaryTerms(): GlossaryTerm[] {
   }
   return [...map.values()].sort((a, b) => a.term.localeCompare(b.term, 'tr'));
 }
+
+/** Terim → sozluk anchor slug'ı (rehype-glossary plugin'i ile aynı format). */
+export function glossarySlug(term: string): string {
+  const map: Record<string, string> = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u' };
+  return term
+    .toLocaleLowerCase('tr')
+    .replace(/[çğıöşü]/g, (ch) => map[ch] ?? ch)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}

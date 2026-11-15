@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
+import { rehypeGlossary } from './src/plugins/rehype-glossary.mjs';
 
 // DevOps Yolculuğu — interaktif DevOps öğrenme platformu
 export default defineConfig({
@@ -12,6 +13,7 @@ export default defineConfig({
   base: '/devops-yolculugu',
   integrations: [mdx()],
   markdown: {
+    rehypePlugins: [[rehypeGlossary, { base: '/devops-yolculugu' }]],
     shikiConfig: {
       // Açık/koyu tema için çift Shiki teması — CSS ile değiştiriliyor
       themes: { light: 'github-light', dark: 'github-dark' },

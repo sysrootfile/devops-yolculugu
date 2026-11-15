@@ -1,6 +1,6 @@
 ---
 import Base from '@layouts/Base.astro';
-import { getGlossaryTerms } from '@lib/glossary';
+import { getGlossaryTerms, glossarySlug } from '@lib/glossary';
 import { BASE, withBase, levelById } from '@consts';
 
 const terms = getGlossaryTerms();
@@ -50,7 +50,7 @@ const totalLessons = terms.filter((t) => t.lessonId).length;
             {groups.get(letter)!.map((t) => {
               const level = levelById(t.level);
               return (
-                <li class="gl-item" data-search={`${t.term} ${t.def}`.toLocaleLowerCase('tr-TR')}>
+                <li class="gl-item" id={`term-${glossarySlug(t.term)}`} data-search={`${t.term} ${t.def}`.toLocaleLowerCase('tr-TR')}>
                   <div class="gl-head">
                     <strong class="gl-term">{t.term}</strong>
                     {t.lessonId ? (
