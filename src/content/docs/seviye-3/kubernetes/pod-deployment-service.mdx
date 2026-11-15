@@ -154,7 +154,7 @@ K8s **downtime'sız** günceller: yeni pod ayağa kalkar, sağlıklıysa eskisi 
 </Callout>
 
 <LabBox
-  id="s3-k8s-lab"
+  id="s3-k8s-lab-box"
   title="Kümeni kur ve siteyi deploy et"
   verify={['kubectl get pods -l app=devops-site', 'curl -s -o /dev/null -w "%{http_code}" http://localhost:30080']}
 >
@@ -179,10 +179,12 @@ K8s **downtime'sız** günceller: yeni pod ayağa kalkar, sağlıklıysa eskisi 
   1) `get pods` yerine `get pods -o wide` (node + IP görürsün). 2) Pod sorunluysa önce
   `describe pod <ad>` — Events kısmı yarı yarıya hata ayıklamayı bitirir. 3) `logs <ad> -f`
   ile uygulama loglarını izle.
+  Bonus araç: **k9s** — tüm bunları terminal UI’da klavye kısayollarıyla yapmanı
+  sağlar (kurulum: Araç Kurulum Rehberi).
 </Callout>
 
 <Quiz
-  id="s3-k8s-lab"
+  id="s3-k8s-lab-q"
   questions={[
     {
       q: 'Pod ile Deployment ilişkisi?',

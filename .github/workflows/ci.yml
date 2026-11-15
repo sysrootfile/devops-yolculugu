@@ -21,6 +21,9 @@ jobs:
       - name: Bağımlılıkları kur
         run: npm ci
 
+      - name: İçerik testleri
+        run: npm test
+
       - name: Siteyi derle
         run: npm run build
 

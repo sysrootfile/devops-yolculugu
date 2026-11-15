@@ -1,0 +1,127 @@
+---
+title: 'AI Destekli DevOps: Bugünü ve Yarını'
+description: 'Kod yardımcıları, AIOps, LLM tabanlı incident asistanları ve IaC üretimi — yapay zekanın DevOps’a gerçek katkısı, riskleri ve sağlam kullanım kuralları.'
+level: 5
+module: 'sektorel'
+order: 3
+duration: 20
+objectives:
+  - 'AI’nın DevOps yaşam döngüsüne girdiği dört katmanı ayırt edebilmek'
+  - 'AIOps ve LLM incident asistanlarının gerçek kullanım alanlarını tanıyabilmek'
+  - 'Hallüinasyon ve secret sızıntısı gibi risklere karşı sağlam kullanım kuralları kurabilmek'
+prerequisites:
+  - 'seviye-4/sre/incident-yonetimi'
+  - 'seviye-5/gitops/platform-engineering'
+tags: ['ai', 'aiops', 'sektör', 'trend']
+---
+
+import Callout from '@components/Callout.astro';
+import Quiz from '@components/Quiz.astro';
+
+## Moda sözcük değil, yaşam döngüsünün dört katmanı
+
+“AI DevOps’u değiştiriyor” başlığı çoğu zaman boş bir vaat olarak geçer. Somut olarak bakalım — bugün gerçekten kullanılan dört katman var:
+
+| Katman | Ne yapar? | Gerçek örnekler |
+| --- | --- | --- |
+| **Kod/IaC yardımcıları** | YAML, Terraform, Dockerfile önerir; boilerplate’i hızlandırır | GitHub Copilot, AWS Q Developer, Google Gemini Code Assist |
+| **AIOps** | Log/metrik kalabalığında anomalı tespiti, alarm birleştirme (alert dedup), kök neden adayı üretme | Datadog Watchdog, Dynatrace Davis, PagerDuty AIOps |
+| **Incident asistanları** | Olay anında özet üretir, benzer geçmiş olayları bulur, runbook önerir | Datadog Bits AI, incident.io, PagerDuty’nin copilot özellikleri |
+| **Bilgi asistanları** | İç dokümantasyon/runbook’lar üzerinde soru-cevap | iç platformların LLM katmanları (Backstage entegrasyonları) |
+
+Kritik çerçeve: bu katmanların hiçbiri **kararı devralmaz** — gürültüyü azaltır, ilk taslağı üretir, bağlamı hızlandırır. Karar ve sorumluluk hâlâ mühendisindir.
+
+## Nerede gerçekten işe yarıyor?
+
+- **Alarm birleştirme:** SEV-1 patladığında 40 alarmin 35’i aynı kökten geliyorsa, AIOps bunları tek olayda gruplar — on-call’ın “sinyal/gürültü” savaşına maddi katkı
+- **Olay özetleme:** 3 saatlik Slack/kanal geçmişinden “ne biliyoruz, ne denendi, şüpheli değişiklik ne” taslağı — IC’nin koordinasyon yükünü düşürür
+- **Runbook ilk taslağı:** “nginx 502” alarmini daha önce yaşamış benzer olayları bularak çözüm adaylarını sıralar
+- **YAML/IaC boilerplate:** standart desenleri hızlı üretir (ConfigMap, Helm values iskeleti) — “standart” olduğu için halüsinasyon riski düşüktür
+
+## Riskler: doğrudan bu reponun derslerinden
+
+1. **Hallüsinasyon, config alanında ölümcül şekilde kendini gösterir:** LLM, “makul görünen ama mevcut olmayan” bir flag’i veya eski API sürümünü kendinden emin yazar. `plan`’ı olmayan IaC (terraform plan’sız apply) ile birleşirse doğrudan production olayıdır — **AI çıktısı = junior mühendis teklifi.** Review’sız merge yok.
+2. **Secret sızıntısı:** “şu .env’i YAML’a göm” gibi prompt’lar, gerçek kimlik bilgilerini harici servise gönderir — Seviye 4 secret yönetimi dersinin ilkesi burada da geçerlidir: **sır, prompt’a girmez.**
+3. **Beceri erozyonu (skill atrophy):** her komutu AI’a sormak, Seviye 1 diagnoz reflekslerini köreltir. AI, refleksin yerine geçmez; hızlandırır.
+4. **Ölçülmemiş benimseme:** “AI kullandık” bir metrik değildir; ölçülecek şey MTTR/durum kodu değil — AI’lı ve AI’sız akışın **lead time ve change failure rate** farkıdır (DORA).
+
+<Callout type="warn" title="Sağlam kullanım kuralları (ekibine öner)">
+  1) AI çıktısı, insan review’ından geçmeden birleşmez (PR kuralı). 2) Prompt’a
+  secret, müşteri verisi, gerçek log içeriği girilmez. 3) Kritik akışlarda AI
+  önerisi hep ikinci bir kaynaktan doğrulanır (docs vs). 4) Kullanım, DORA
+  metrikleriyle ölçülür — hislerle değil. Bu dört kural, AI’yı “risk” olmaktan
+  çıkarıp “kaldıraç” yapar.
+</Callout>
+
+## AIOps’un dürüst sınırı
+
+AIOps araçları **bilinen desenlerde** iyidir: tekrarlayan alarm patlamaları, mevsimsel anomali, yavaş sızıntılar (memory leak gibi). Ama **bilinmeyen-bilinmeyen** olaylarda (Seviye 4 observability dersindeki “yeni sorular” problemi) hâlâ insan gerekir: 2018 GitHub kesintisi gibi zincirleme, ilk kez görülen olaylarda LLM’in özeti yardımcıdır ama kök neden hipotezini mühendis üretir. AI, “ilk 10 dakikayı” hızlandırır; “son 10 dakikayı” yine mühendis kapatır.
+
+## Pragmatik başlangıç planı (ekibine önerilecek)
+
+1. **Kod yardımcısıyla başla** — en düşük risk, en hızlı geri dönüş (boilerplate YAML/IaC)
+2. **Incident özetleme pilotu** — tek ekiple, MTTR öncesi/sonrası karşılaştırmalı
+3. **AIOps alarm birleştirmeyi en sona bırak** — önce alarm hijyeni düzeltilmeli (Seviye 4 incident dersi: “çok alarm = sistem sorunu”); gürültünün üstüne AI koymak gürültüyü özetler, azaltmaz
+4. Her adımda **ölç** ve ekip geri bildirimi topla — platform dersindeki ürün disiplini burada da geçerli
+
+<Callout type="info" title="Sektör gerçekliği">
+  2023 sonrası büyük observability satıcılarının (Datadog, Dynatrace, New Relic,
+  PagerDuty) ürün adlarında AI geçmesi standart hale geldi — pazarlama yoğunluğu
+  yüksektir, ama alarm birleştirme ve özetleme gerçekten çalışır hale gelmiştir.
+  Ayırt edici soru: “araç, kararımı destekliyor mu, yoksa kararımı devralıyor mu
+  iddia ediyor?” İkincisini vaat eden her araç şüpheyle incelenir.
+</Callout>
+
+<Quiz
+  id="s5-ai-devops"
+  questions={[
+    {
+      q: 'AI çıktısına ekipte doğru tutum hangisidir?',
+      options: [
+        'Model büyükse doğrudan apply edilebilir',
+        'Junior mühendis teklifi gibi davranılır: review’sız birleşmez, ikinci kaynaktan doğrulanır',
+        'Yalnızca acil durumlarda kullanılır',
+        'Dokümante edilmesi gerekmez',
+      ],
+      answer: 1,
+      explain:
+        'Hallüsinasyon riski config/IaC alanında production olayına dönüşebilir; AI çıktısı hızlandırılmış bir taslaktır, karar değil.',
+    },
+    {
+      q: 'AI ile çalışırken secret yönetimi kuralı nedir?',
+      options: [
+        'Şifreli prompt kullanılır',
+        'Kimlik bilgileri ve gerçek müşteri verisi prompt’a hiç girilmez',
+        'Yalnızca üretim anahtarları paylaşılır',
+        'AI araçları zaten güvenlidir',
+      ],
+      answer: 1,
+      explain:
+        'Prompt, harici bir servise gönderilen veridir — Seviye 4 secret yönetiminin “sır üretimden çıkmaz” ilkesi burada da geçerlidir.',
+    },
+    {
+      q: 'AIOps alarm birleştirmesinden önce hangisi düzeltilmelidir?',
+      options: [
+        'AI modelinin boyutu',
+        'Alarm hijyeni — gürültü üreten eşikler/kurallar (aksi halde AI gürültüyü özetler, azaltmaz)',
+        'Dashboard sayısı',
+        'Log saklama süresi',
+      ],
+      answer: 1,
+      explain:
+        'Bozuk alarm tasarımı üstüne konan AI, gürültüyü akıllı görünümlü gürültüye çevirir; önce Seviye 4 alarm disiplini gerekir.',
+    },
+    {
+      q: 'AI benimsemesinin etkisini ölçmenin doğru yolu?',
+      options: [
+        'Kullanılan token sayısı',
+        'DORA metriklerindeki değişim: lead time ve change failure rate’in AI’lı/AI’sız karşılaştırması',
+        'Ekipten memnuniyet anketi',
+        'Satıcının benchmark raporu',
+      ],
+      answer: 1,
+      explain:
+        '“AI kullandık” bir sonuç değildir; teslim performansındaki ölçülebilir fark sonuçtur — DORA çerçevesi burada da işler.',
+    },
+  ]}
+/>

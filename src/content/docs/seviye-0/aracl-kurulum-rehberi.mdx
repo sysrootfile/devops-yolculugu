@@ -118,6 +118,17 @@ pipx install --include-deps ansible # pipx olan her ortam
 
 Doğrula: `ansible --version`.
 
+### Verimlilik favorileri: k9s ve dive
+
+| Araç | Ne yapar? | Kurulum | Doğrula |
+| --- | --- | --- | --- |
+| **k9s** | Kubernetes için terminal UI: pod logları, rollout’lar, shell — klavyeyle saniyeler içinde | `brew install k9s` · `winget install Derailed.k9s` · Linux: GitHub releases binary | `k9s version` |
+| **dive** | Docker imajının katman katman boyut analizini görselleştirir (“bu katmanda ne var?”) | `brew install dive` · Linux: GitHub releases binary | `dive --version` |
+
+Bu ikisi “olmazsa olmaz” değil ama öğrenme hızını ciddi artırır: `dive devops-site:1.0.0`
+ile kendi imajının katmanlarını gör (Seviye 3 Docker dersi), `k9s` ile kind
+kümeni UI’dan gezmeye başla (Seviye 3 Kubernetes dersi).
+
 ## 3. Seviye 4–5 araçları — izleme, güvenlik, GitOps
 
 | Araç | Kurulum | Doğrula | Nerede lazım? |

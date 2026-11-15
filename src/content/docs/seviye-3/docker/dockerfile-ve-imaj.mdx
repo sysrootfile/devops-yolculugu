@@ -151,11 +151,13 @@ curl -I http://localhost:8080          # HTTP 200 görmelisin
   3. `docker build -t devops-site:1.0.0 .`
   4. `docker run --rm -p 8080:80 devops-site:1.0.0` → tarayıcıda kontrol et.
   5. Bir derse bir satır ekle, yeniden build al: `npm ci` katmanının **CACHED** olduğunu izle.
-  6. Bonus: repoda bu imaj artık CI tarafından GHCR'a da gönderiliyor (Seviye 3'ün *Registry ve Multi-stage* dersindeki desen) — Actions sekmesinde `docker` job'ını incele.
+  6. Bonus: `dive devops-site:1.0.0` ile imajının katman katman boyut analizini gör
+     (her katmanda ne var, nerede israf var? — kurulum: Araç Kurulum Rehberi).
+  7. Bonus: repoda bu imaj artık CI tarafından GHCR'a da gönderiliyor (Seviye 3'ün *Registry ve Multi-stage* dersindeki desen) — Actions sekmesinde `docker` job'ını incele.
 </LabBox>
 
 <Quiz
-  id="s3-dockerfile"
+  id="s3-dockerfile-q"
   questions={[
     {
       q: '`COPY package.json package-lock.json ./`’in `COPY . .`’ten önce gelmesinin nedeni?',

@@ -45,13 +45,13 @@ Bu Astro projesi üzerinden somutlaştıralım — Seviye 0'daki “dogfooding�
 
 **1. Unit test — içerik şeması:**
 
-Astro'nun Content Collections, `level: 7` gibi geçersiz veriyi build anında reddeder. Bu aslında şema tabanlı bir testtir. Ek olarak kendi kontrollerini yazabilirsin:
+Astro'nun Content Collections, `level: 7` gibi geçersiz veriyi build anında reddeder. Bu aslında şema tabanlı bir testtir. Ek olarak kendi kontrollerini yazabilirsin — ve **bu repoda gerçekten yazıldı**: `scripts/validate-content.mjs`
 
-```js
-// test/content.test.mjs — tüm derslerin benzersiz id'ye sahip olduğu
-import { getCollection } from 'astro:content';
-// ...ders id'lerinde çakışma olmadığını, her modülde en az 1 ders olduğunu doğrula
+```bash
+npm test   # çalıştır: 53 ders + tüm interaktif bileşen id'leri doğrulanır
 ```
+
+Script'in kontrol ettiği şeyler (tam listesi dosyanın başında): ders id'lerinin benzersizliği, aynı (seviye, modül) içinde order çakışması olmaması, `prerequisites` referanslarının gerçek derslere işaret etmesi, quiz/lab/terminal bileşenlerinde `id="..."` çakışması olmaması. CI'da build'den **önce** ayrı bir adım olarak koşar — test, build'den hızlıdır ve kırılganlığı erken yakalar.
 
 **2. Integration test — derleme:**
 
