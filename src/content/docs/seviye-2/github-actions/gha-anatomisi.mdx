@@ -31,7 +31,7 @@ jobs:                             # bir workflow birden çok job içerir
   build:                          # job kimliği
     runs-on: ubuntu-latest        # hangi runner'da?
     steps:                        # job, sıralı step'lerden oluşur
-      - uses: actions/checkout@v4 # hazır eylem: repoyu indir
+      - uses: actions/checkout@v5 # hazır eylem: repoyu indir
       - run: npm ci               # shell komutu
       - run: npm run build
 ```
@@ -75,7 +75,7 @@ jobs:
         node: [20, 22]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
@@ -95,7 +95,7 @@ deploy:
   if: github.ref == 'refs/heads/main'
   runs-on: ubuntu-latest
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - run: echo "sadece main'de, build sonrası"
 ```
 
