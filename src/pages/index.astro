@@ -1,6 +1,7 @@
 ---
 import Base from '@layouts/Base.astro';
 import { buildNavTree, getAllDocs, sortLessons, toVM } from '@lib/content';
+import { withBase } from '@consts';
 
 const docs = await getAllDocs();
 const tree = buildNavTree(docs);
@@ -21,6 +22,7 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
     <div class="hero-actions">
       <a class="btn-primary" id="continue-btn" href={allLessons[0]?.url ?? '#'}>▶ Kaldığın yerden devam et</a>
       <a class="btn-ghost" href="#mufredat">📚 Müfredata göz at</a>
+      <a class="btn-ghost" href={withBase('/sozluk/')}>📖 Sözlük</a>
     </div>
   </section>
 

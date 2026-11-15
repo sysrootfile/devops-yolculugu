@@ -14,7 +14,7 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 - 🧠 Her derste **quiz** — anlık geri bildirim, skor localStorage'da saklanır
 - 💻 Tarayıcıda çalışan **terminal simülatörü** — komutları güvenle dene
 - 🧪 Adım adım **lab kutuları** — kendi makinende uygula, doğrula, işaretle
-- 🃏 **Flashcards** — terim kartlarıyla tekrar
+- 🃏 **Flashcards** — terim kartlarıyla tekrar + [📚 Sözlük](https://sysrootfile.github.io/devops-yolculugu/sozluk/) sayfası (tüm terimler tek yerde, filtreli)
 - 📊 **İlerleme takibi** — seviye bazlı barlar, kaldığın yerden devam et
 - 🔍 **Ctrl+K arama**, koyu/açık tema, kopyalanabilir kod blokları, Mermaid diyagramları
 

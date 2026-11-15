@@ -1,0 +1,174 @@
+---
+import Base from '@layouts/Base.astro';
+import { getGlossaryTerms } from '@lib/glossary';
+import { BASE, withBase, levelById } from '@consts';
+
+const terms = getGlossaryTerms();
+
+const groups = new Map<string, typeof terms>();
+for (const term of terms) {
+  const letter = term.term.charAt(0).toLocaleUpperCase('tr-TR');
+  if (!groups.has(letter)) groups.set(letter, []);
+  groups.get(letter)!.push(term);
+}
+const letters = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'tr'));
+const totalLessons = terms.filter((t) => t.lessonId).length;
+---
+
+<Base title="Sözlük" description="DevOps terimleri sözlüğü — tüm seviyelerdeki kavramların tek sayfada filtrelenebilir referansı.">
+  <section class="hero" style="padding: 40px 24px 24px;">
+    <div class="hero-emoji" aria-hidden="true">📚</div>
+    <h1>Sözlük</h1>
+    <p>
+      Yolculuktaki terimlerin tek sayfada birleştiği referans: flashcard terimleri
+      otomatik toplanır + kürasyonlu ek kavramlar. <strong>{terms.length} terim</strong> ·
+      {totalLessons} tanesi bir derse bağlı.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-ghost" href={withBase('/')}>← Ana Sayfa</a>
+    </div>
+  </section>
+
+  <section class="glossary" aria-label="Terim listesi">
+    <div class="gl-search">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input
+        id="glossary-filter"
+        type="search"
+        placeholder="Terim veya tanım içinde ara…"
+        aria-label="Sözlükte ara"
+        autocomplete="off"
+      />
+      <span class="gl-count" id="glossary-count">{terms.length} terim</span>
+    </div>
+
+    {
+      letters.map((letter) => (
+        <div class="gl-group" data-letter={letter}>
+          <h2>{letter}</h2>
+          <ul>
+            {groups.get(letter)!.map((t) => {
+              const level = levelById(t.level);
+              return (
+                <li class="gl-item" data-search={`${t.term} ${t.def}`.toLocaleLowerCase('tr-TR')}>
+                  <div class="gl-head">
+                    <strong class="gl-term">{t.term}</strong>
+                    {t.lessonId ? (
+                      <a class="gl-link" href={`${BASE}/ders/${t.lessonId}`}>
+                        {level?.emoji} {level?.name}
+                      </a>
+                    ) : (
+                      <span class="gl-link">{level?.emoji} {level?.name}</span>
+                    )}
+                  </div>
+                  <p class="gl-def">{t.def}</p>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))
+    }
+    <div class="search-empty" id="glossary-empty" hidden>Aradığın terim bulunamadı 🤷</div>
+  </section>
+
+  <script>
+    const input = document.getElementById('glossary-filter') as HTMLInputElement;
+    const count = document.getElementById('glossary-count')!;
+    const empty = document.getElementById('glossary-empty')!;
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.gl-item'));
+    const groupsList = Array.from(document.querySelectorAll<HTMLElement>('.gl-group'));
+
+    function refresh() {
+      const q = input.value.trim().toLocaleLowerCase('tr-TR');
+      let visible = 0;
+      items.forEach((item) => {
+        const match = !q || (item.dataset.search ?? '').includes(q);
+        item.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      groupsList.forEach((group) => {
+        const any = group.querySelectorAll<HTMLElement>('.gl-item:not([style*="none"])').length > 0;
+        group.style.display = any ? '' : 'none';
+      });
+      count.textContent = `${visible} terim`;
+      empty.hidden = visible !== 0;
+    }
+
+    input.addEventListener('input', refresh);
+  </script>
+</Base>
+
+<style>
+  .glossary {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  .gl-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 26px;
+    position: relative;
+  }
+  .gl-search .search-icon {
+    color: var(--text-faint);
+  }
+  .gl-search input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text);
+    font-size: 15px;
+  }
+  .gl-count {
+    font-size: 13px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+  .gl-group h2 {
+    font-size: 17px;
+    color: var(--accent);
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 6px;
+    margin: 26px 0 12px;
+  }
+  .gl-group ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 12px;
+  }
+  .gl-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+  }
+  .gl-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .gl-term {
+    font-size: 15.5px;
+  }
+  .gl-link {
+    font-size: 12.5px;
+    color: var(--text-faint);
+  }
+  .gl-def {
+    margin: 6px 0 0;
+    font-size: 14.5px;
+    color: var(--text-soft);
+  }
+</style>

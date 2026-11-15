@@ -60,3 +60,14 @@ test('içindekiler listesi görünür ve linklidir', async ({ page }) => {
   const firstHref = await tocLinks.first().getAttribute('href');
   expect(firstHref).toMatch(/^#/);
 });
+
+test('sözlük sayfası filtrelenir', async ({ page }) => {
+  await page.goto(`${BASE}/sozluk/`);
+  const total = await page.locator('.gl-item').count();
+  expect(total).toBeGreaterThan(30);
+  await page.locator('#glossary-filter').fill('argo');
+  const visible = await page.locator('.gl-item:visible').count();
+  expect(visible).toBeGreaterThan(0);
+  expect(visible).toBeLessThan(total);
+  await expect(page.locator('.gl-item:visible').first()).toContainText(/Argo/i);
+});
