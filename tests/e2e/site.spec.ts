@@ -80,3 +80,14 @@ test('sözlük terimleri derslerde otomatik linklenir', async ({ page }) => {
   const title = await glLink.getAttribute('title');
   expect(title?.length ?? 0).toBeGreaterThan(10);
 });
+
+test('quiz rozeti dashboardda görünür', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('dy:quiz:s0-devops-nedir', JSON.stringify({ c: 4, t: 4 }));
+  });
+  await page.goto(`${BASE}/`);
+  const badge = page.locator('a.lesson-row[data-lesson-id="seviye-0/devops-nedir"] .lr-quiz');
+  await expect(badge).toHaveAttribute('data-filled', 'true');
+  await expect(badge).toHaveText('4/4');
+  await expect(badge).toHaveAttribute('data-perfect', 'true');
+});

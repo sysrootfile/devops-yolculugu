@@ -1239,6 +1239,23 @@ main.content {
   color: var(--text-faint);
   white-space: nowrap;
 }
+.lesson-row .lr-quiz {
+  display: none;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--surface-2);
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.lesson-row .lr-quiz[data-filled='true'] {
+  display: inline-block;
+}
+.lesson-row .lr-quiz[data-perfect='true'] {
+  background: var(--ok-soft);
+  color: var(--ok);
+}
 
 .howto {
   max-width: 980px;
@@ -1285,4 +1302,91 @@ main.content {
   margin: 0 auto 20px;
   padding: 0 24px;
   text-align: center;
+}
+
+/* ---------- Yazdır / PDF ---------- */
+.print-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.print-btn:hover {
+  background: var(--accent-soft);
+}
+
+.quiz-answer-key {
+  display: none; /* yalnızca yazdırma çıktısında görünür */
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+  }
+  .site-header,
+  .sidebar,
+  .site-footer,
+  .hero-actions,
+  .complete-row,
+  .pager,
+  .lab-done-row,
+  .quiz-reset,
+  .code-copy,
+  .term-input-row,
+  .term-progress,
+  .dash-stats,
+  .howto,
+  .dash-reset,
+  .print-btn,
+  .toc {
+    display: none !important;
+  }
+  .quiz-answer-key {
+    display: block !important;
+  }
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  main.content {
+    padding: 0;
+  }
+  .prose {
+    max-width: 100%;
+  }
+  .q-item,
+  .lab,
+  .callout,
+  .mermaid-box,
+  .objectives,
+  .stat-card {
+    break-inside: avoid;
+  }
+  .quiz,
+  .lab,
+  .objectives,
+  .callout,
+  .mermaid-box {
+    box-shadow: none;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .astro-code {
+    border: 1px solid #ddd;
+  }
 }

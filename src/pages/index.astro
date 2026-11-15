@@ -8,6 +8,14 @@ const tree = buildNavTree(docs);
 const allLessons = sortLessons(docs).map(toVM);
 const totalLessons = allLessons.length;
 const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
+
+// Build zamanında ders → quiz id eşlemesi (rozetler localStorage'dan okunur)
+const quizIdByLesson = new Map<string, string | null>(
+  docs.map((d) => {
+    const m = d.body?.match(/<Quiz\s+id="([\w-]+)"/);
+    return [d.id, m?.[1] ?? null];
+  })
+);
 ---
 
 <Base>
@@ -105,6 +113,10 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
                   <a class="lesson-row" href={lesson.url} data-lesson-id={lesson.id}>
                     <span class="lr-check" aria-hidden="true">✓</span>
                     <span class="lr-title">{lesson.title}</span>
+                    <span
+                      class="lr-quiz"
+                      data-lesson-quiz={quizIdByLesson.get(lesson.id) ?? ''}
+                    ></span>
                     <span class="lr-duration">~{lesson.duration} dk</span>
                   </a>
                 ))}
@@ -129,6 +141,23 @@ const totalMinutes = allLessons.reduce((sum, l) => sum + l.duration, 0);
         const isDone = id && localStorage.getItem('dy:done:' + id) === '1';
         row.setAttribute('data-done', isDone ? 'true' : 'false');
         if (isDone) done++;
+
+        // Quiz rozeti — dy:quiz:<id> kaydı varsa göster (attribute rozetin kendisinde)
+        const badge = row.querySelector<HTMLElement>('.lr-quiz');
+        const quizId = badge?.dataset.lessonQuiz;
+        if (quizId && badge) {
+          const raw = localStorage.getItem('dy:quiz:' + quizId);
+          if (raw) {
+            try {
+              const v = JSON.parse(raw);
+              if (typeof v.c === 'number' && typeof v.t === 'number' && v.t > 0) {
+                badge.textContent = `${v.c}/${v.t}`;
+                badge.setAttribute('data-filled', 'true');
+                if (v.c === v.t) badge.setAttribute('data-perfect', 'true');
+              }
+            } catch {}
+          }
+        }
       });
 
       // Seviye barları

@@ -15,6 +15,9 @@ interface Props {
 }
 
 const { id, title = 'Bilgi Kontrolü', questions } = Astro.props;
+const answerKey = questions
+  .map((qq, i) => `${i + 1}-${String.fromCharCode(65 + qq.answer)}`)
+  .join(' · ');
 ---
 
 <section class="quiz" data-quiz-id={id} data-quiz-total={questions.length}>
@@ -44,6 +47,7 @@ const { id, title = 'Bilgi Kontrolü', questions } = Astro.props;
     <span class="score-text">Henüz cevaplanmadı</span>
     <button class="quiz-reset" type="button">↺ Sıfırla</button>
   </div>
+  <div class="quiz-answer-key">Cevap anahtarı: {answerKey}</div>
 </section>
 
 <script>

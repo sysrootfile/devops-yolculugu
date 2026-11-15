@@ -45,6 +45,15 @@ const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
             <span>📖 Ders {lessonIndex}/{totalLessons}</span>
             {vm.tags.length > 0 && <span>🏷 {vm.tags.join(', ')}</span>}
           </div>
+          {
+            vm.id.endsWith('/ozet') && (
+              <div style="margin-top: 14px">
+                <button type="button" class="print-btn" onclick="window.print()">
+                  🖨 Yazdır / PDF olarak kaydet
+                </button>
+              </div>
+            )
+          }
         </header>
 
         {
