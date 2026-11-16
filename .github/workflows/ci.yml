@@ -41,7 +41,7 @@ jobs:
           path: dist/
 
   deploy-pages:
-    needs: build
+    needs: [build, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -108,8 +108,8 @@ jobs:
           name: playwright-report
           path: playwright-report/
 
-  deploy-pages:
-    needs: [build, e2e]
+  docker:
+    needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
