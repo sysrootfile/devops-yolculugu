@@ -16,6 +16,7 @@ Sıfırdan ileri seviyeye **interaktif DevOps öğrenme platformu** — [Astro 6
 - 🧪 Adım adım **lab kutuları** — kendi makinende uygula, doğrula, işaretle
 - 🃏 **Flashcards** — terim kartlarıyla tekrar + [📚 Sözlük](https://sysrootfile.github.io/devops-yolculugu/sozluk/) sayfası (tüm terimler tek yerde, filtreli)
 - 📊 **İlerleme takibi** — seviye bazlı barlar, kaldığın yerden devam et
+- 🧪 **Test piramidi** — içerik testleri, build ve **Playwright E2E** (12 test); her koşumun HTML raporu [test-raporu](https://sysrootfile.github.io/devops-yolculugu/test-raporu/) adresinde yayınlanır
 - 🔍 **Ctrl+K arama**, koyu/açık tema, kopyalanabilir kod blokları, Mermaid diyagramları
 
 ## 🗺️ Müfredat

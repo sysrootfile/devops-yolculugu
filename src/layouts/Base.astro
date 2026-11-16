@@ -59,6 +59,9 @@ const altAbs = altLangUrl && Astro.site ? new URL(altLangUrl, Astro.site).href :
           >{t.glossaryLink}</a
         > ·
         <a href={withBase('/egitmen/')} title={t.instructorLink}>{t.instructorLink}</a> ·
+        <a href={withBase('/test-raporu/')} title={lang === 'en' ? 'Latest E2E test report' : 'Son E2E test raporu'}
+          >🧪 {lang === 'en' ? 'Test Report' : 'Test Raporu'}</a
+        > ·
         <a href="https://astro.build" target="_blank" rel="noopener">Astro</a> {lang === 'en'
           ? 'powered by'
           : 'ile üretildi'} ·
